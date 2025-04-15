@@ -31,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dvansa.cankom.main.MainScreen
+import dvansa.cankom.timeedit.TimeEditScreen
 import dvansa.cankom.useredit.UserEditScreen
 import kotlinx.coroutines.CoroutineScope
 
@@ -50,10 +51,17 @@ fun NavigationGraph(
         composable(
             NavDestinations.MAIN_ROUTE,
         ) {
-            MainScreen(onEditButton = { navActions.navigateToUserEdit() }, modifier = modifier)
+            MainScreen(
+                onEditButton = { navActions.navigateToUserEdit() },
+                onTimeEditButton = { navActions.navigateToTimeEdit()},
+                modifier = modifier
+            )
         }
         composable(NavDestinations.USER_EDIT_ROUTE) {
             UserEditScreen(onSaveUserParameters = {}, onBack = { navActions.navigateToMain() }, modifier = modifier)
+        }
+        composable(NavDestinations.TIME_EDIT_ROUTE) {
+            TimeEditScreen(onSaveTimeParameters = {}, onBack = { navActions.navigateToMain() }, modifier = modifier)
         }
     }
 }

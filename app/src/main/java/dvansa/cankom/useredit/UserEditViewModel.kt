@@ -21,35 +21,31 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
-package dvansa.cankom
+package dvansa.cankom.useredit
 
-import androidx.navigation.NavHostController
-import dvansa.cankom.NavScreens.MAIN_SCREEN
-import dvansa.cankom.NavScreens.TIME_EDIT_SCREEN
-import dvansa.cankom.NavScreens.USER_EDIT_SCREEN
 
-private object NavScreens {
-    const val MAIN_SCREEN = "main"
-    const val USER_EDIT_SCREEN = "edit"
-    const val TIME_EDIT_SCREEN= "time_edit"
-}
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
-object NavDestinations {
-    const val MAIN_ROUTE = MAIN_SCREEN
-    const val USER_EDIT_ROUTE = USER_EDIT_SCREEN
-    const val TIME_EDIT_ROUTE = TIME_EDIT_SCREEN
-}
+data class UserEditUiState(
+    var minTemperature: Int = 0,
+    var maxTemperature: Int = 30
+)
 
-class NavActions(private val navController: NavHostController) {
-    fun navigateToMain() {
-        navController.navigate(NavDestinations.MAIN_ROUTE)
+class UserEditViewModel () : ViewModel() {
+
+    private val _uiState = MutableStateFlow<UserEditUiState>(UserEditUiState());
+    val uiState: StateFlow<UserEditUiState> get() = _uiState;
+
+    fun updateMinTemperature(temperature: Int) {
+        _uiState.value = _uiState.value.copy(minTemperature = temperature);
     }
 
-    fun navigateToUserEdit() {
-        navController.navigate(NavDestinations.USER_EDIT_ROUTE)
+    fun updateMaxTemperature(temperature: Int) {
+        _uiState.value = _uiState.value.copy(maxTemperature = temperature);
     }
 
-    fun navigateToTimeEdit() {
-        navController.navigate(NavDestinations.TIME_EDIT_ROUTE)
-    }
 }
+
+
