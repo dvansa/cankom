@@ -26,4 +26,6 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
+    // Google Maps
+    alias(libs.plugins.mapsplatformPlugin) apply false
 }

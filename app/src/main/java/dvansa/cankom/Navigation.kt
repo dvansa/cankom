@@ -25,6 +25,7 @@ package dvansa.cankom
 
 import androidx.navigation.NavHostController
 import dvansa.cankom.NavScreens.MAIN_SCREEN
+import dvansa.cankom.NavScreens.MAP_ROUTE_SCREEN
 import dvansa.cankom.NavScreens.TIME_EDIT_SCREEN
 import dvansa.cankom.NavScreens.USER_EDIT_SCREEN
 
@@ -32,12 +33,14 @@ private object NavScreens {
     const val MAIN_SCREEN = "main"
     const val USER_EDIT_SCREEN = "edit"
     const val TIME_EDIT_SCREEN= "time_edit"
+    const val MAP_ROUTE_SCREEN = "map_route"
 }
 
 object NavDestinations {
     const val MAIN_ROUTE = MAIN_SCREEN
     const val USER_EDIT_ROUTE = USER_EDIT_SCREEN
     const val TIME_EDIT_ROUTE = TIME_EDIT_SCREEN
+    const val MAP_ROUTE_ROUTE = MAP_ROUTE_SCREEN
 }
 
 class NavActions(private val navController: NavHostController) {
@@ -51,5 +54,9 @@ class NavActions(private val navController: NavHostController) {
 
     fun navigateToTimeEdit() {
         navController.navigate(NavDestinations.TIME_EDIT_ROUTE)
+    }
+
+    fun navigateToMapRoute() {
+        navController.navigate(NavDestinations.MAP_ROUTE_ROUTE)
     }
 }
