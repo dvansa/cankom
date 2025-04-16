@@ -32,13 +32,19 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 
 
@@ -46,6 +52,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 fun MapRouteScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: MapRouteViewModel = MapRouteViewModel()
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
         Column(modifier = modifier.padding(paddingValues)) {
@@ -57,16 +64,33 @@ fun MapRouteScreen(
                 }
             }
 
+            val uiState by viewModel.uiState.collectAsState();
+
             // Initial position at Zürich
             val startPosition = LatLng(47.3769, 8.54173)
             val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(startPosition, 10.0f)
+                position = CameraPosition.fromLatLngZoom(startPosition, 14.5f)
             }
+            Text(text = "Long Click: reset route. Click: add waypoint.")
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = true)
-            )
+                uiSettings = MapUiSettings(zoomControlsEnabled = true),
+                onMapLongClick = {latLng -> viewModel.resetRoute(); },
+                onMapClick = { latLng -> viewModel.addRoutePoint(latLng)}
+            ) {
+                Polyline(
+                    points=uiState.route,
+                    color = Color(0xFFAB3DEB),
+                    width = 11.0f
+                )
+                if (!uiState.route.isEmpty()) {
+                    Circle(center = uiState.route.get(0),
+                    fillColor = Color(0xFFAB3DEB),
+                    strokeColor = Color(0xFFAB3DEB),
+                    radius = 21.0)
+                }
+            }
         }
     }
 }
