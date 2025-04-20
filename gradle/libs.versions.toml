@@ -12,6 +12,7 @@ navigationCompose = "2.8.9"
 maps-compose = "2.12.0"
 mapsplatformPlugin = "2.0.1"
 play-services-maps = "18.1.0"
+ktor = "2.3.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,12 +35,17 @@ play-services-maps = { group = "com.google.android.gms", name = "play-services-m
 maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "maps-compose" }
 maps-compose-widgets = { group = "com.google.maps.android", name = "maps-compose-widgets", version.ref = "maps-compose" }
 maps-utils = { group = "com.google.maps.android", name = "maps-compose-utils", version.ref = "maps-compose" }
+# Http client
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+ktor-client-contentNegotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinxJson = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 mapsplatformPlugin = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "mapsplatformPlugin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [bundles]
 # Google Maps

@@ -26,6 +26,7 @@ package dvansa.cankom.main
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -60,7 +61,6 @@ fun MainScreen(
             }) {
                 Icon(Icons.Filled.Settings, contentDescription = "Map Route")
             }
-
         }
     }
 }

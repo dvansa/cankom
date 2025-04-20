@@ -27,6 +27,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     // Google Maps
     alias(libs.plugins.mapsplatformPlugin)
+    // Http requests
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -79,6 +81,11 @@ dependencies {
     // Google Maps
     implementation(libs.play.services.maps)
     implementation(libs.bundles.googleMaps)
+
+    // Http
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.contentNegotiation)
+    implementation(libs.ktor.serialization.kotlinxJson)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
