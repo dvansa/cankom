@@ -46,25 +46,36 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
+import dvansa.cankom.useredit.TimePoint
 
+
+data class InitialState(
+    val route : dvansa.cankom.model.MapPath
+)
 
 @Composable
 fun MapRouteScreen(
+    initialState : InitialState,
+    onSaveRoute : (newRoute : dvansa.cankom.model.MapPath) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MapRouteViewModel = MapRouteViewModel()
+    viewModel: MapRouteViewModel = MapRouteViewModel(
+        MapRouteUiState(route=initialState.route.map {
+            LatLng(it.latitude, it.longitude)
+        })
+    )
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
         Column(modifier = modifier.padding(paddingValues)) {
+            val uiState by viewModel.uiState.collectAsState();
             Box(contentAlignment = Alignment.TopStart) {
                 IconButton(onClick = {
-                    onBack();
+                    onSaveRoute(/*newRoute=*/uiState.route.map{ dvansa.cankom.model.LatLng(it.latitude, it.longitude)})
+                    onBack()
                 }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
-
-            val uiState by viewModel.uiState.collectAsState();
 
             // Initial position at Zürich
             val startPosition = LatLng(47.3769, 8.54173)

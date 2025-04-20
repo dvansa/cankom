@@ -44,9 +44,9 @@ data class UserEditUiState(
     var arriveTime: TimePoint = TimePoint(hour=0, min=0)
 )
 
-class UserEditViewModel () : ViewModel() {
+class UserEditViewModel(userEditUiState : UserEditUiState = UserEditUiState()) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<UserEditUiState>(UserEditUiState());
+    private val _uiState = MutableStateFlow<UserEditUiState>(userEditUiState);
     val uiState: StateFlow<UserEditUiState> get() = _uiState;
 
     fun updateMinTemperature(temperature: Int) {

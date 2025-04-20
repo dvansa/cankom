@@ -56,19 +56,35 @@ import dvansa.cankom.meteo.MeteoClient
 import kotlinx.coroutines.launch
 
 
+data class InitialState(
+    val minTemperature: Int,
+    val maxTemperature: Int,
+    val leaveTime : dvansa.cankom.model.TimePoint,
+    val arriveTime : dvansa.cankom.model.TimePoint
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserEditScreen(
-    onSaveUserParameters: () -> Unit,
-    onBack: () -> Unit,
+    initialState : InitialState,
+    onSaveUserParameters: (minTemperature: Int, maxTemperature: Int, leaveTime : TimePoint, arriveTime : TimePoint) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: UserEditViewModel = UserEditViewModel(),
+    onBack: () -> Unit,
+    viewModel: UserEditViewModel = UserEditViewModel(
+            UserEditUiState(
+                minTemperature = initialState.minTemperature,
+                maxTemperature = initialState.maxTemperature,
+                leaveTime = TimePoint(initialState.leaveTime.hour, initialState.leaveTime.min),
+                arriveTime = TimePoint(initialState.arriveTime.hour, initialState.arriveTime.min)
+            )
+        ),
 ) {
     val uiState by viewModel.uiState.collectAsState();
     Scaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
-        Column(modifier = modifier.padding(paddingValues) /*horizontalAlignment = Alignment.CenterHorizontally*/) {
+        Column(modifier = modifier.padding(paddingValues)) {
             Box(contentAlignment = Alignment.TopStart) {
                 IconButton(onClick = {
+                    onSaveUserParameters(uiState.minTemperature, uiState.maxTemperature, uiState.leaveTime, uiState.arriveTime)
                     onBack();
                 }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")

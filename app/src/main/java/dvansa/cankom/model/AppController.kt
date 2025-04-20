@@ -1,3 +1,6 @@
+package dvansa.cankom.model
+
+import dvansa.cankom.model.TimePoint
 /*
 * MIT License
 *
@@ -21,33 +24,43 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
-package dvansa.cankom.maproute
 
+class AppController {
 
-import androidx.lifecycle.ViewModel
-import com.google.android.gms.maps.model.LatLng
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+    private val _commuteParams = CommuteParameters()
+    private var _route: MapPath = listOf()
 
-data class MapRouteUiState(
-    val route: List<LatLng> = listOf()
-)
-
-class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) : ViewModel() {
-
-    private val _uiState = MutableStateFlow<MapRouteUiState>(mapRouteUiState);
-    val uiState: StateFlow<MapRouteUiState> get() = _uiState;
-
-    fun resetRoute() {
-        _uiState.value = _uiState.value.copy(route = listOf());
+    // Commute Parameters
+    fun setCommuteTemperatureRange(minTemperature : Int? = null, maxTemperature : Int? = null) {
+        minTemperature?.let {
+            _commuteParams.minTemperature = it
+        }
+        maxTemperature?.let {
+            _commuteParams.maxTemperature = it
+        }
     }
 
-    fun addRoutePoint(point : LatLng) {
-        val route : MutableList<LatLng> = _uiState.value.route.toMutableList();
-        route.add(point)
-        _uiState.value = _uiState.value.copy(route = route);
+    fun setCommuteTime(leaveTime: TimePoint? = null, arriveTime: dvansa.cankom.model.TimePoint? = null) {
+        leaveTime?.let {
+            _commuteParams.leaveTime = it
+        }
+        arriveTime?.let {
+            _commuteParams.arriveTime = it
+        }
     }
+
+    fun getCommuteParameters() : CommuteParameters {
+        return _commuteParams
+    }
+
+    // Route
+    fun setCommuteRoute(newRoute : MapPath) {
+        _route = newRoute
+    }
+
+    fun getCommuteRoute() : MapPath {
+        return _route
+    }
+
 
 }
-
-

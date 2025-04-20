@@ -21,33 +21,24 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
-package dvansa.cankom.maproute
+package dvansa.cankom.model
 
 
-import androidx.lifecycle.ViewModel
-import com.google.android.gms.maps.model.LatLng
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-
-data class MapRouteUiState(
-    val route: List<LatLng> = listOf()
+data class LatLng (
+    val latitude : Double = 0.0,
+    val longitude : Double = 0.0
 )
 
-class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) : ViewModel() {
+typealias MapPath = List<LatLng>
 
-    private val _uiState = MutableStateFlow<MapRouteUiState>(mapRouteUiState);
-    val uiState: StateFlow<MapRouteUiState> get() = _uiState;
+data class TimePoint(
+    val hour : Int = 0,
+    val min : Int = 0
+)
 
-    fun resetRoute() {
-        _uiState.value = _uiState.value.copy(route = listOf());
-    }
-
-    fun addRoutePoint(point : LatLng) {
-        val route : MutableList<LatLng> = _uiState.value.route.toMutableList();
-        route.add(point)
-        _uiState.value = _uiState.value.copy(route = route);
-    }
-
-}
-
-
+data class CommuteParameters (
+    var minTemperature : Int = 0,
+    var maxTemperature : Int = 30,
+    var leaveTime : TimePoint = TimePoint(hour=7, min=45),
+    var arriveTime : TimePoint = TimePoint(hour=8, min=15),
+)

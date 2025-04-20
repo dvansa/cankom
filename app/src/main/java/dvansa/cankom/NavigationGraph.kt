@@ -32,6 +32,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dvansa.cankom.main.MainScreen
 import dvansa.cankom.maproute.MapRouteScreen
+import dvansa.cankom.model.AppController
+import dvansa.cankom.model.TimePoint
+import dvansa.cankom.useredit.InitialState
 import dvansa.cankom.useredit.UserEditScreen
 import kotlinx.coroutines.CoroutineScope
 
@@ -39,6 +42,7 @@ import kotlinx.coroutines.CoroutineScope
 @Composable
 fun NavigationGraph(
     modifier: Modifier = Modifier,
+    appController : AppController = AppController(),
     navController: NavHostController = rememberNavController(),
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     navActions : NavActions = NavActions(navController),
@@ -58,10 +62,39 @@ fun NavigationGraph(
             )
         }
         composable(NavDestinations.USER_EDIT_ROUTE) {
-            UserEditScreen(onSaveUserParameters = {}, onBack = { navActions.navigateToMain() }, modifier = modifier)
+            UserEditScreen(
+                initialState = {
+                    val params = appController.getCommuteParameters()
+                    InitialState(
+                        minTemperature=params.minTemperature,
+                        maxTemperature=params.maxTemperature,
+                        leaveTime=params.leaveTime,
+                        arriveTime=params.arriveTime
+                    )
+                }(),
+                onSaveUserParameters = {
+                    minTemperature, maxTemperature, leaveTime, arriveTime ->
+                        appController.setCommuteTime(
+                            leaveTime=TimePoint(hour=leaveTime.hour, min= leaveTime.min),
+                            arriveTime=TimePoint(hour=arriveTime.hour, min= arriveTime.min)
+                        )
+                        appController.setCommuteTemperatureRange(
+                            minTemperature=minTemperature,
+                            maxTemperature=maxTemperature
+                        )
+                },
+                onBack = {
+                    navActions.navigateToMain()
+                 },
+                modifier = modifier)
         }
         composable(NavDestinations.MAP_ROUTE_ROUTE) {
-            MapRouteScreen(onBack = { navActions.navigateToMain() }, modifier = modifier)
+            MapRouteScreen(
+                initialState = dvansa.cankom.maproute.InitialState(route=appController.getCommuteRoute()),
+                onSaveRoute = {newRoute -> appController.setCommuteRoute(newRoute)},
+                onBack = { navActions.navigateToMain() },
+                modifier = modifier
+            )
         }
     }
 }
