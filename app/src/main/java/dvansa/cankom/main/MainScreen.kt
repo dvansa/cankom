@@ -39,7 +39,6 @@ import androidx.compose.ui.Modifier
 @Composable
 fun MainScreen(
     onEditButton: () -> Unit,
-    onTimeEditButton: () -> Unit,
     onMapRouteButton: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -50,11 +49,6 @@ fun MainScreen(
                 onEditButton();
             }) {
                 Icon(Icons.Filled.Settings, contentDescription = "Edit")
-            }
-            Button(onClick = {
-                onTimeEditButton();
-            }) {
-                Icon(Icons.Filled.Settings, contentDescription = "Time Edit")
             }
             Button(onClick = {
                 onMapRouteButton();

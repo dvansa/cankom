@@ -28,9 +28,20 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+data class TimePoint(
+    var hour : Int,
+    var min: Int
+)
+
 data class UserEditUiState(
+    // Temperature
     var minTemperature: Int = 0,
-    var maxTemperature: Int = 30
+    var maxTemperature: Int = 30,
+    // Time
+    var showLeaveTimeDialog : Boolean = false,
+    var showArriveTimeDialog : Boolean = false,
+    var leaveTime: TimePoint = TimePoint(hour=0, min=0),
+    var arriveTime: TimePoint = TimePoint(hour=0, min=0)
 )
 
 class UserEditViewModel () : ViewModel() {
@@ -44,6 +55,26 @@ class UserEditViewModel () : ViewModel() {
 
     fun updateMaxTemperature(temperature: Int) {
         _uiState.value = _uiState.value.copy(maxTemperature = temperature);
+    }
+
+    fun showLeaveTimeDialog() {
+        _uiState.value = _uiState.value.copy(showLeaveTimeDialog = true, showArriveTimeDialog = false);
+    }
+
+    fun showArriveTimeDialog() {
+        _uiState.value = _uiState.value.copy(showLeaveTimeDialog = false, showArriveTimeDialog = true);
+    }
+
+    fun dismissDialogs() {
+        _uiState.value = _uiState.value.copy(showLeaveTimeDialog = false, showArriveTimeDialog = false);
+    }
+
+    fun updateLeaveTime(hour: Int, min: Int) {
+        _uiState.value = _uiState.value.copy(leaveTime = TimePoint(hour=hour, min=min));
+    }
+
+    fun updateArriveTime(hour: Int, min: Int) {
+        _uiState.value = _uiState.value.copy(arriveTime = TimePoint(hour=hour, min=min));
     }
 
 }
