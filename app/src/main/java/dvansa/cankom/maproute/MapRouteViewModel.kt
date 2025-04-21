@@ -26,11 +26,13 @@ package dvansa.cankom.maproute
 
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
+import dvansa.cankom.meteo.PrecipitationRegion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 data class MapRouteUiState(
-    val route: List<LatLng> = listOf()
+    val route: List<LatLng> = listOf(),
+    val precipitationRegions : List<PrecipitationRegion> = listOf()
 )
 
 class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) : ViewModel() {
@@ -46,6 +48,10 @@ class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) 
         val route : MutableList<LatLng> = _uiState.value.route.toMutableList();
         route.add(point)
         _uiState.value = _uiState.value.copy(route = route);
+    }
+
+    fun setPrecipitationRegions(regions : List<PrecipitationRegion>) {
+        _uiState.value = _uiState.value.copy(precipitationRegions = regions);
     }
 
 }

@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,10 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
-import androidx.lifecycle.viewModelScope
 import dvansa.cankom.R
-import dvansa.cankom.meteo.MeteoClient
-import kotlinx.coroutines.launch
 
 
 data class InitialState(
@@ -136,28 +132,6 @@ fun UserEditScreen(
                     )
                 }
             }
-
-            // TODO. Remove, only used to test Http API
-            Button(onClick = {
-                val client = MeteoClient()
-                viewModel.viewModelScope.launch {
-                    try {
-                        val response = client.getPrecipitationRadarData(2025, 4, 20, 17, 0)
-                        println("Receieved system coords: ${response.coords.system}. #Areas: ${response.areas.size} ")
-                        val area = response.areas.get(0)
-                        println("[Area 0] color: ${area.color}. #Shapes: ${area.shapes.size} ")
-                        check(area.shapes.size >= 10 && !area.shapes.get(10).isEmpty())
-                        val shape00 = area.shapes.get(10).get(0)
-                        println("[Area 0][Shape 10 0] i: ${shape00.i} j: ${shape00.j} l: '${shape00.l} o: '${shape00.o}' d: '${shape00.d}'")
-
-                    } catch (e: Exception) {
-                        println("Http error while getting radar data: ${e.message}")
-                    }
-                }
-
-            }) {
-                Icon(Icons.Filled.Refresh, contentDescription = "Test Query")
-            }
         }
     }
 }
@@ -197,7 +171,6 @@ fun EditableTime (
             }) {
                 Icon(Icons.Filled.Edit, contentDescription = label)
             }
-
         }
     }
 }
