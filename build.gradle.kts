@@ -30,5 +30,4 @@ plugins {
     alias(libs.plugins.mapsplatformPlugin) apply false
     // Http requests
     alias(libs.plugins.kotlin.serialization) apply false
-
 }

@@ -64,6 +64,11 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        resources.excludes.add("META-INF/linux/x64/org/lwjgl/**")
+        resources.excludes.add("META-INF/INDEX.LIST")
+    }
 }
 
 dependencies {
@@ -86,6 +91,9 @@ dependencies {
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.contentNegotiation)
     implementation(libs.ktor.serialization.kotlinxJson)
+
+    // Vec Math
+    implementation("kotlin.graphics:glm:0.9.9.1-11")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

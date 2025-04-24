@@ -40,6 +40,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Vec Math
+        maven("https://raw.githubusercontent.com/kotlin-graphics/mary/master")
     }
 }
 

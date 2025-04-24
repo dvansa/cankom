@@ -23,6 +23,8 @@
 */
 package dvansa.cankom.model
 
+import glm_.glm
+import glm_.vec2.Vec2d
 import java.time.LocalDateTime
 
 // Get range of times to query meteo info for next commute based on curent time.
@@ -51,4 +53,28 @@ fun getQueryCommuteTimes(leaveTime : dvansa.cankom.model.TimePoint, arriveTime :
         commuteLeaveTime = commuteLeaveTime.plusMinutes(minutesResolution.toLong())
     }
     return queryDateTimes.toList()
+}
+
+// Get bounding box enclosing all LatLng points in mapPath.
+// Optionally a margin in km can be passed to expand bbox borders.
+fun getLatLngBoundingBox(mapPath : MapPath, marginInKm: Double = 0.0) : Pair<Vec2d, Vec2d> {
+    var bbMin = Vec2d(9e9, 9e9)
+    var bbMax = Vec2d(-9e9, -9e9)
+    mapPath.forEach {
+        val p = Vec2d(it.latitude, it.longitude)
+        bbMin = glm.min(bbMin, p)
+        bbMax = glm.max(bbMax, p)
+    }
+
+    if(marginInKm > 0.0) {
+        // Convert tolerance in km to deg
+        val latTolerance = ROUTE_DISTANCE_TOL_IN_KM / 110.574
+        val lngToleranceMin = ROUTE_DISTANCE_TOL_IN_KM / (glm.cos(bbMin.x) * 111.320)
+        val lngToleranceMax = ROUTE_DISTANCE_TOL_IN_KM / (glm.cos(bbMax.x) * 111.320)
+
+        bbMin = bbMin - Vec2d(latTolerance, lngToleranceMin)
+        bbMax = bbMax + Vec2d(latTolerance, lngToleranceMax)
+    }
+
+    return Pair<Vec2d, Vec2d>(bbMin, bbMax)
 }

@@ -77,7 +77,7 @@ fun MapRouteScreen(
     initialState : InitialState,
     onSaveRoute : (newRoute : dvansa.cankom.model.MapPath) -> Unit,
     onBack: () -> Unit,
-    checkPrecipitationCommute: suspend () -> Unit,
+    checkPrecipitationCommute: suspend () -> List<PrecipitationRegion>,
     modifier: Modifier = Modifier,
     viewModel: MapRouteViewModel = MapRouteViewModel(
         MapRouteUiState(route=initialState.route.map {
@@ -102,7 +102,8 @@ fun MapRouteScreen(
 
                 viewModel.viewModelScope.launch {
                     try {
-                        checkPrecipitationCommute()
+                        val closePrecipitationRegions = checkPrecipitationCommute()
+                        viewModel.setPrecipitationRegions(closePrecipitationRegions.filter {it.intensity > -1})
 
 //                        val client = MeteoSwissClient()
 //                        val response = client.getPrecipitationRadarData(2025, 4, 21, 15, 0)
