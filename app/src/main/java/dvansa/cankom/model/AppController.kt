@@ -1,6 +1,3 @@
-package dvansa.cankom.model
-
-import dvansa.cankom.model.TimePoint
 /*
 * MIT License
 *
@@ -24,9 +21,21 @@ import dvansa.cankom.model.TimePoint
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
+package dvansa.cankom.model
 
-class AppController {
+import dvansa.cankom.meteo.MeteoClient
+import dvansa.cankom.meteo.PrecipitationRegion
+import kotlinx.coroutines.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.awaitAll
+import dvansa.cankom.model.TimePoint
 
+// Queries to meteorological data are made every <QUERY_TIME_RESOLUTION_MINUTES> minutes.
+// Highly impacts app processing performance and latency.
+const val QUERY_TIME_RESOLUTION_MINUTES = 10;
+
+class AppController(val meteoClient : MeteoClient) {
     private val _commuteParams = CommuteParameters()
     private var _route: MapPath = listOf()
 
@@ -62,5 +71,33 @@ class AppController {
         return _route
     }
 
+    // Validate commute with precipitation data
+    suspend fun checkCommutePrecipitation() {
+        val queryTimes = getQueryCommuteTimes(
+            _commuteParams.leaveTime,
+            _commuteParams.arriveTime,
+            QUERY_TIME_RESOLUTION_MINUTES
+        )
+        queryTimes.forEach{println("Querying precipitation at time ${it}")}
 
+        coroutineScope {
+            val resultsPrecipitation = queryTimes.map {
+                async {
+                    meteoClient.getPrecipitationRadarData(
+                        it.year,
+                        it.monthValue,
+                        it.dayOfMonth,
+                        it.hour,
+                        it.minute
+                    )
+                }
+            }.awaitAll()
+
+            for ((i, precipitationRegions) in resultsPrecipitation.withIndex()) {
+                println("$i) Received ${precipitationRegions.size} regions.")
+            }
+
+            // TODO: use queried precipitation regions to check if they are close to commute route.
+        }
+    }
 }
