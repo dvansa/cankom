@@ -61,23 +61,25 @@ data class InitialState(
 )
 
 val MAP_INTENSITY_TO_COLOR : Map<Int, Color> = mapOf(
-    0 to Color(0xFF9A7E95),
-    1 to Color(0xFF0001fC),
-    2 to Color(0xFF058C2D),
-    3 to Color(0xFF05FF05),
-    4 to Color(0xFFfEFF01),
-    5 to Color(0xFFFFC703),
-    6 to Color(0xFFFF7D01),
-    7 to Color(0xFFFF0000),
-    8 to Color(0xFFFF00FF)
+    0 to Color(0xDD9A7E95),
+    1 to Color(0xDD0001fC),
+    2 to Color(0xDD058C2D),
+    3 to Color(0xDD05FF05),
+    4 to Color(0xDDfEFF01),
+    5 to Color(0xDDFFC703),
+    6 to Color(0xDDFF7D01),
+    7 to Color(0xDDFF0000),
+    8 to Color(0xDDFF00FF)
 )
+
+val INTERSECTING_REGIONS_COLOR = Color(0xDDFF00000)
 
 @Composable
 fun MapRouteScreen(
     initialState : InitialState,
     onSaveRoute : (newRoute : dvansa.cankom.model.MapPath) -> Unit,
     onBack: () -> Unit,
-    checkPrecipitationCommute: suspend () -> List<PrecipitationRegion>,
+    checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>,List<PrecipitationRegion>>,
     modifier: Modifier = Modifier,
     viewModel: MapRouteViewModel = MapRouteViewModel(
         MapRouteUiState(route=initialState.route.map {
@@ -102,8 +104,8 @@ fun MapRouteScreen(
 
                 viewModel.viewModelScope.launch {
                     try {
-                        val closePrecipitationRegions = checkPrecipitationCommute()
-                        viewModel.setPrecipitationRegions(closePrecipitationRegions.filter {it.intensity > -1})
+                        val (intersectingPrecipitationRegions, closePrecipitationRegions) = checkPrecipitationCommute()
+                        viewModel.setPrecipitationRegions(intersectingPrecipitationRegions, closePrecipitationRegions)
 
 //                        val client = MeteoSwissClient()
 //                        val response = client.getPrecipitationRadarData(2025, 4, 21, 15, 0)
@@ -132,14 +134,22 @@ fun MapRouteScreen(
                 cameraPositionState = cameraPositionState,
                 uiSettings = MapUiSettings(zoomControlsEnabled = true),
                 onMapLongClick = {latLng -> viewModel.resetRoute(); },
-                onMapClick = { latLng -> viewModel.addRoutePoint(latLng)}
-            ) {
+                onMapClick = { latLng ->
+                    viewModel.addRoutePoint(latLng)
+                    onSaveRoute(/*newRoute=*/uiState.route.map{ dvansa.cankom.model.LatLng(it.latitude, it.longitude)})
+                }) {
 
-                uiState.precipitationRegions.forEach{
+                // Precipitation regions
+                uiState.closePrecipitationRegions.forEach{
                     region : PrecipitationRegion ->
-                    Polygon(points= region.polygon.map { LatLng(it.latitude, it.longitude)},fillColor = MAP_INTENSITY_TO_COLOR.get(region.intensity)!! )
+                    Polygon(points= region.polygon.map { LatLng(it.latitude, it.longitude)}, fillColor = MAP_INTENSITY_TO_COLOR.get(region.intensity) ?: Color(0xFFFFFFFF), strokeWidth=0.0f )
+                }
+                uiState.intersectingPrecipitationRegions.forEach{
+                        region : PrecipitationRegion ->
+                    Polygon(points= region.polygon.map { LatLng(it.latitude, it.longitude)}, fillColor = INTERSECTING_REGIONS_COLOR, strokeWidth=0.0f )
                 }
 
+                // Commute route
                 Polyline(
                     points=uiState.route,
                     color = Color(0xFFAB3DEB),

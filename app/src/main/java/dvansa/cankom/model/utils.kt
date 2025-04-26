@@ -78,3 +78,49 @@ fun getLatLngBoundingBox(mapPath : MapPath, marginInKm: Double = 0.0) : Pair<Vec
 
     return Pair<Vec2d, Vec2d>(bbMin, bbMax)
 }
+
+// Checks if 2 axis aligned bounding boxes intersect.
+fun bboxOverlap(box1min : Vec2d, box1max : Vec2d, box2min : Vec2d, box2max : Vec2d) : Boolean {
+    return box1min.x < box2max.x && box2min.x < box1max.x && box1min.y < box2max.y && box2min.y < box1max.y
+}
+
+// Check if 2 line segments p0->p1 and q0->q1 intersect.
+fun linesIntersect(p0 : Vec2d, p1 : Vec2d, q0 : Vec2d, q1 : Vec2d) : Boolean {
+    val dP = p1 - p0
+    val dQ = q1 - q0
+
+    val v0 = dQ.y*(q1.x-p0.x) - dQ.x*(q1.y-p0.y)
+    val v1 = dQ.y*(q1.x-p1.x) - dQ.x*(q1.y-p1.y)
+    val v2 = dP.y*(p1.x-q0.x) - dP.x*(p1.y-q0.y)
+    val v3 = dP.y*(p1.x-q1.x) - dP.x*(p1.y-q1.y)
+
+    return (v0*v1<=0) && (v2*v3<=0)
+}
+
+// Check if point is contained in polygon.
+// Implementation from https://wrfranklin.org/Research/Short_Notes/pnpoly.html.
+// Subject to the following license note:
+/*
+* Copyright (c) 1970-2003, Wm. Randolph Franklin
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+*
+* Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimers.
+* Redistributions in binary form must reproduce the above copyright notice in the documentation and/or other materials provided with the distribution.
+* The name of W. Randolph Franklin may not be used to endorse or promote products derived from this Software without specific prior written permission.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+fun pointContainedInPolygon(p : Vec2d, poly : List<Vec2d>): Boolean {
+    var c = false
+    var j = poly.size - 1
+    for (i in 0 until poly.size) {
+        if ((poly[i].y > p.y) != (poly[j].y > p.y) &&
+            (p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+        ) {
+            c = !c
+        }
+        j = i
+    }
+    return c
+}

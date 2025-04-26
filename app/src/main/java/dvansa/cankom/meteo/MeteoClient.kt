@@ -8,5 +8,6 @@ data class PrecipitationRegion (
 )
 
 interface MeteoClient {
+    // Input time in GMT.
     suspend fun getPrecipitationRadarData(year: Int, month: Int, day: Int, hour: Int, mins: Int ) : List<PrecipitationRegion>
 }

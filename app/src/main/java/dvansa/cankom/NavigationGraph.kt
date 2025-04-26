@@ -52,7 +52,7 @@ fun NavigationGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavDestinations.MAIN_ROUTE,
+        startDestination = NavDestinations.MAP_ROUTE_ROUTE,
         modifier = modifier
     ) {
         composable(

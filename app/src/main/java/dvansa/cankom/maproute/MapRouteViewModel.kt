@@ -32,7 +32,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 data class MapRouteUiState(
     val route: List<LatLng> = listOf(),
-    val precipitationRegions : List<PrecipitationRegion> = listOf()
+    val closePrecipitationRegions : List<PrecipitationRegion> = listOf(),
+    val intersectingPrecipitationRegions : List<PrecipitationRegion> = listOf()
 )
 
 class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) : ViewModel() {
@@ -50,8 +51,8 @@ class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) 
         _uiState.value = _uiState.value.copy(route = route);
     }
 
-    fun setPrecipitationRegions(regions : List<PrecipitationRegion>) {
-        _uiState.value = _uiState.value.copy(precipitationRegions = regions);
+    fun setPrecipitationRegions(intersectingRegions : List<PrecipitationRegion>, closeRegions : List<PrecipitationRegion>) {
+        _uiState.value = _uiState.value.copy(intersectingPrecipitationRegions = intersectingRegions, closePrecipitationRegions = closeRegions);
     }
 
 }
