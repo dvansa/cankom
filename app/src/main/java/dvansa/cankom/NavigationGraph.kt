@@ -32,14 +32,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dvansa.cankom.main.MainScreen
 import dvansa.cankom.maproute.MapRouteScreen
-import dvansa.cankom.meteo.MeteoClient
 import dvansa.cankom.meteo.MeteoSwissClient
 import dvansa.cankom.model.AppController
 import dvansa.cankom.model.TimePoint
 import dvansa.cankom.useredit.InitialState
 import dvansa.cankom.useredit.UserEditScreen
-import io.ktor.util.reflect.instanceOf
 import kotlinx.coroutines.CoroutineScope
+import kotlin.coroutines.suspendCoroutine
 
 
 @Composable
@@ -91,12 +90,17 @@ fun NavigationGraph(
                  },
                 modifier = modifier)
         }
+
         composable(NavDestinations.MAP_ROUTE_ROUTE) {
             MapRouteScreen(
                 initialState = dvansa.cankom.maproute.InitialState(route=appController.getCommuteRoute()),
-                onSaveRoute = {newRoute -> appController.setCommuteRoute(newRoute)},
+                onSaveRoute = { newRoute -> appController.setCommuteRoute(newRoute)},
                 onBack = { navActions.navigateToMain() },
-                checkPrecipitationCommute =  suspend { appController.checkCommutePrecipitation() },
+                checkPrecipitationCommute = suspend {
+                    appController.checkCommutePrecipitation() },
+                checkTemperatureCommute = {
+                    context -> appController.checkCommuteTemperature(context)
+                },
                 modifier = modifier
             )
         }

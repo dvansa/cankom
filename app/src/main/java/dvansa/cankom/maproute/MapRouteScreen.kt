@@ -23,6 +23,7 @@
 */
 package dvansa.cankom.maproute
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -50,9 +52,8 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
-import dvansa.cankom.meteo.MeteoSwissClient
 import dvansa.cankom.meteo.PrecipitationRegion
-import dvansa.cankom.useredit.TimePoint
+import dvansa.cankom.model.MapPath
 import kotlinx.coroutines.launch
 
 
@@ -76,10 +77,11 @@ val INTERSECTING_REGIONS_COLOR = Color(0xDDFF00000)
 
 @Composable
 fun MapRouteScreen(
-    initialState : InitialState,
-    onSaveRoute : (newRoute : dvansa.cankom.model.MapPath) -> Unit,
+    initialState: InitialState,
+    onSaveRoute: (MapPath) -> Unit,
     onBack: () -> Unit,
-    checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>,List<PrecipitationRegion>>,
+    checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>,
+    checkTemperatureCommute: suspend (Context) -> Boolean,
     modifier: Modifier = Modifier,
     viewModel: MapRouteViewModel = MapRouteViewModel(
         MapRouteUiState(route=initialState.route.map {
@@ -104,6 +106,7 @@ fun MapRouteScreen(
 
                 viewModel.viewModelScope.launch {
                     try {
+
                         val (intersectingPrecipitationRegions, closePrecipitationRegions) = checkPrecipitationCommute()
                         viewModel.setPrecipitationRegions(intersectingPrecipitationRegions, closePrecipitationRegions)
 
@@ -121,6 +124,18 @@ fun MapRouteScreen(
 
             }) {
                 Icon(Icons.Filled.Refresh, contentDescription = "Test Query")
+            }
+            val localContext = LocalContext.current
+            Button(onClick = {
+                viewModel.viewModelScope.launch {
+                    try {
+                        checkTemperatureCommute(localContext)
+                    } catch (e: Exception) {
+                        println("Http error while getting temperature data: ${e.message}")
+                    }
+                }
+            }) {
+                Icon(Icons.Filled.Refresh, contentDescription = "Test Temperature Query")
             }
 
             // Initial position at Zürich

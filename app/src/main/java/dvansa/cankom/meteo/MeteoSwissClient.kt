@@ -35,6 +35,9 @@ import io.ktor.client.request.url
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.math.pow
 
 // Constants
@@ -42,6 +45,7 @@ const val HTTP_TIMEOUT_IN_MILLISECONDS = 5000L
 const val URL_BASE = "https://www.meteoswiss.admin.ch/product/output"
 const val URL_SUB_VERSION = "versions.json"
 const val PRECIPITATION_PRODUCT_NAME = "inca/precipitation/rate"
+const val FORECAST_CHART_PRODUCT_NAME = "forecast-chart"
 
 val MAP_COLOR_TO_INTENSITY : Map<String, Int> = mapOf(
     "9a7e95" to 0,
@@ -56,7 +60,7 @@ val MAP_COLOR_TO_INTENSITY : Map<String, Int> = mapOf(
     "<PURPLE>" to 8
 )
 
-// Response JSON data
+// Response JSON data -- Precipitation
 @Serializable
 data class RadarDataCoordinates(
     val system : String,
@@ -87,6 +91,57 @@ data class RadarDataArea(
 data class RadarData(
     val coords : RadarDataCoordinates,
     val areas : List<RadarDataArea>
+)
+
+// Response JSON data -- Forecast chart
+
+@Serializable
+data class ForecastSymbol(
+    val weather_symbol_id : Int,
+    val timestamp : Long
+)
+
+@Serializable
+data class ForecastWindGustPeak(
+    val data : List<List<Double>>,
+)
+
+@Serializable
+data class ForecastWindSymbol(
+    val symbol_id : String,
+    val timestamp: Long
+)
+
+@Serializable
+data class ForecastWind(
+    val data : List<List<Double>>,
+    val symbols : List<ForecastWindSymbol>
+)
+
+@Serializable
+data class ForecastChart(
+    val day_string : String,
+    val min_date : Long,
+    val max_date : Long,
+    val sunrise : Long,
+    val sunset : Long,
+    val current_time : Long?, // null?
+    val current_time_string : String?, // null?
+
+    val wind : ForecastWind,
+    val wind_gust_peak : ForecastWindGustPeak,
+
+    val wind_speed_variance : List<List<Double>>,
+    // val wind_gust_variance : List<List<Double>>,
+    val wind_gust_speed_variance : List<List<Double>>,
+    val rainfall : List<List<Double>>,
+    val sunshine : List<List<Double>>,
+    val variance_rain : List<List<Double>>,
+    val variance_range : List<List<Double>>,
+    val temperature : List<List<Double>>,
+
+    val symbol_day: ForecastSymbol,
+    val symbols : List<ForecastSymbol>
 )
 
 fun convertFromLV0395ToCH(x : Double, y : Double) : Pair<Double, Double> {
@@ -161,6 +216,19 @@ class MeteoSwissClient(
         url(urlString = String.format("$URL_BASE/$PRECIPITATION_PRODUCT_NAME/version__$productVersion/rate_%04d%02d%02d_%02d%02d.json", year, month, day, hour, mins))
     }.body()
 
+    private suspend fun queryForecastChart(productVersion: String, postalCode: Int) : List<ForecastChart> = httpClient.get {
+        val postalCodeFormatted = String.format("%-6s", postalCode).replace(' ', '0')
+        println("Querying $URL_BASE/$FORECAST_CHART_PRODUCT_NAME/version__$productVersion/de/$postalCodeFormatted.json")
+        url(urlString = "$URL_BASE/$FORECAST_CHART_PRODUCT_NAME/version__$productVersion/de/$postalCodeFormatted.json")
+    }.body()
+
+    private fun localDateTimeFromEpoch(timeSinceEpochMillis : Long) : LocalDateTime {
+        return LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(timeSinceEpochMillis),
+                ZoneId.of("UTC")
+        )
+    }
+
     override suspend fun getPrecipitationRadarData(year: Int, month: Int, day: Int, hour: Int, mins: Int ) : List<PrecipitationRegion> {
         check(mins % 5 == 0 && mins >= 0 && mins <= 55) {
             "Invalid minutes input. Must be a multiple of 5 and between 0 and 55."
@@ -212,5 +280,65 @@ class MeteoSwissClient(
         }
 
         return precipitationRegions.toList()
+    }
+
+    override suspend fun getTemperature(
+        postalCode: Int,
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        mins: Int
+    ): Int {
+        // Query forecast chart product version
+        var forecastChartProductVersion : String? = null
+        try {
+            forecastChartProductVersion = queryApiProductVersion().get(FORECAST_CHART_PRODUCT_NAME)
+        } catch(e:Exception) {
+            throw Exception("Error while obtaining meteo api versions. Error: ${e.message}.")
+        }
+
+        if (forecastChartProductVersion == null) {
+            throw Exception("Error while obtaining meteo forecast chart api version. Error: forecast chart product not found.")
+        }
+
+        // Query forecast chart at the specified postal code
+        var forecastChart : List<ForecastChart>? = null
+        try {
+            forecastChart = queryForecastChart(forecastChartProductVersion, postalCode)
+        } catch (e: Exception) {
+            throw Exception("Error while obtaining meteo forecast chart (CP $postalCode). Error: ${e.message}")
+        }
+
+        val queryTime = LocalDateTime.of(year, month, day, hour, mins)
+
+        // Check if queried time is within forecast
+        val dayForecast = forecastChart.find{forecastChart ->
+            val minTime = localDateTimeFromEpoch(forecastChart.min_date).minusSeconds(1)
+            val maxTime = localDateTimeFromEpoch(forecastChart.max_date).plusSeconds(1)
+            println("(CP $postalCode) Day time ranges $minTime - $maxTime. Query time $queryTime")
+            queryTime.isAfter(minTime) && queryTime.isBefore(maxTime) }
+        if(dayForecast == null) {
+            throw Exception("Error while obtaining meteo forecast chart temperature (CP $postalCode). Error: no forecast available for queried time.")
+        }
+
+        // Find temperature interval.
+        val temperatureInterval = dayForecast.temperature.windowed(2).find {
+            temperatureInterval ->
+            val minTime = localDateTimeFromEpoch(temperatureInterval.get(0).get(0).toLong())
+            val maxTime = localDateTimeFromEpoch(temperatureInterval.get(1).get(0).toLong())
+            println("Time ranges $minTime - $maxTime. Query time $queryTime")
+            queryTime.isAfter(minTime.minusSeconds(1)) && queryTime.isBefore(maxTime.plusSeconds(1))
+        }
+
+        if(temperatureInterval == null) {
+            throw Exception("Error while obtaining meteo forecast chart temperature. Error: could not find day interval temperature for queried time.")
+        }
+
+        // TODO interpolate instead of average.
+        val temperature = (temperatureInterval.get(0).get(1) + temperatureInterval.get(1).get(1)) / 2.0
+        println("Forecast chart temperature at $queryTime -> $temperature C")
+
+        return temperature.toInt()
     }
 }

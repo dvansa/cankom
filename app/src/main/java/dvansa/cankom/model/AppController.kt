@@ -23,6 +23,8 @@
 */
 package dvansa.cankom.model
 
+import android.content.Context
+import android.location.Address
 import dvansa.cankom.meteo.MeteoClient
 import dvansa.cankom.meteo.PrecipitationRegion
 import kotlinx.coroutines.async
@@ -30,6 +32,10 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import glm_.vec2.Vec2d
 import java.time.ZonedDateTime
+import android.location.Geocoder
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import java.time.LocalDateTime
 
 // Queries to meteorological data are made every <QUERY_TIME_RESOLUTION_MINUTES> minutes.
 // Highly impacts app processing performance and latency.
@@ -74,9 +80,7 @@ class AppController(val meteoClient : MeteoClient) {
         return _route
     }
 
-    // Validate commute with precipitation data-
-    // Returns intersecting regions with route and other near precipitation regions.
-    suspend fun checkCommutePrecipitation() : Pair<List<PrecipitationRegion>, List<PrecipitationRegion>> {
+    suspend fun getNextCommuteTimes() : List<LocalDateTime> {
         if (ZonedDateTime.now().offset.id != "+02:00") {
             throw Exception("Can only query in GMT+2 time zone.")
         }
@@ -87,6 +91,13 @@ class AppController(val meteoClient : MeteoClient) {
             _commuteParams.arriveTime,
             QUERY_TIME_RESOLUTION_MINUTES
         ).map{ it.minusHours(timeZoneHourOffset.toLong()) }
+        return queryTimes
+    }
+
+    // Validate commute with precipitation data-
+    // Returns intersecting regions with route and other near precipitation regions.
+    suspend fun checkCommutePrecipitation() : Pair<List<PrecipitationRegion>, List<PrecipitationRegion>> {
+        val queryTimes = getNextCommuteTimes()
         queryTimes.forEach{println("Querying precipitation at time $it GMT+0")}
 
         // Compute commute route bounding box
@@ -162,5 +173,65 @@ class AppController(val meteoClient : MeteoClient) {
         }
 
         return Pair(intersectingPrecipitationRegions, closePrecipitationRegions)
+    }
+
+    suspend fun checkCommuteTemperature(context : Context) : Boolean {
+        if(_route.size < 2) {
+            return false
+        }
+
+        var postalCodes = mutableSetOf<Int>()
+
+        val geocoder = Geocoder(context)
+        // Query start and end point of route
+        for (routePoint in listOf<LatLng>(_route.first(), _route.last())) {
+            val addresses = geocoder.getFromLocation(routePoint.latitude, routePoint.longitude, 5)
+            if(addresses != null) {
+                for (addr in addresses) {
+                    if(addr.locality != null && addr.postalCode !=null) {
+                        postalCodes.add(addr.postalCode.toInt())
+                    }
+                }
+            }
+        }
+        println("Querying postal codes for temperature ranges: $postalCodes")
+
+        val queryTimes = getNextCommuteTimes()
+        var temperatures = listOf<Int?>()
+        coroutineScope {
+            var temperatureQueries = mutableListOf<Deferred<Int?>>()
+            for (queryTime in listOf(queryTimes.first(), queryTimes.last()) ){
+                for( postalCode in postalCodes) {
+                    temperatureQueries.add(async {
+                        var temperature : Int? = null
+                        try {
+                            temperature = meteoClient.getTemperature(
+                                postalCode,
+                                queryTime.year,
+                                queryTime.monthValue,
+                                queryTime.dayOfMonth,
+                                queryTime.hour,
+                                queryTime.minute
+                            )
+                        } catch (e : Exception) {
+                            println("Could not get temperature for CP $postalCode")
+                        }
+                        temperature
+                    })
+                }
+            }
+            temperatures = temperatureQueries.awaitAll()
+        }
+        // If any of the ranges are outside of min/max allowed temperatures fail check.
+        for (minMaxTemperature in temperatures.filter{it != null}.map{it!!}) {
+            if (minMaxTemperature < _commuteParams.minTemperature) {
+                println("Found colder temperature ${minMaxTemperature} (commute min temp: ${_commuteParams.minTemperature})")
+                return false
+            } else if (minMaxTemperature > _commuteParams.maxTemperature) {
+                println("Found warmer temperature ${minMaxTemperature} (commute max temp: ${_commuteParams.maxTemperature})")
+                return false
+            }
+        }
+        return true
     }
 }
