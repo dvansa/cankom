@@ -47,7 +47,6 @@ fun NavigationGraph(
     modifier: Modifier = Modifier,
     appController : AppController = AppController(MeteoSwissClient()),
     navController: NavHostController = rememberNavController(),
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
     navActions : NavActions = NavActions(navController),
 ) {
     NavHost(
@@ -62,11 +61,11 @@ fun NavigationGraph(
                 onEditButton = { navActions.navigateToUserEdit() },
                 onMapRouteButton = { navActions.navigateToMapRoute()},
                 onRefresh = {
-                    context ->
+                    context, useCached ->
                     val startTime = System.currentTimeMillis()
-                    appController.checkCommutePrecipitation(useCached = false)
+                    appController.checkCommutePrecipitation(useCached = useCached)
                     val precipitationTime = System.currentTimeMillis()
-                    appController.checkCommuteTemperatureRange(context = context, useCached = false)
+                    appController.checkCommuteTemperatureRange(context = context, useCached = useCached)
                     val temperatureTime = System.currentTimeMillis()
                     println("Query times. Precipitation = ${precipitationTime - startTime} ms. Temperature = ${temperatureTime - precipitationTime} ms")
                 },

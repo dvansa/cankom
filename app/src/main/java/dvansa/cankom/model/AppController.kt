@@ -110,6 +110,7 @@ class AppController(val meteoClient : MeteoClient) {
 
     // Returns intersecting regions with commute route and other near precipitation regions.
     suspend fun checkCommutePrecipitation(useCached : Boolean = true) : Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? {
+        println("!!! cache $useCached , ${_precipitationRegions == null}")
         if(useCached && _precipitationRegions != null) {
             return _precipitationRegions!!
         }
