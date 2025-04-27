@@ -316,7 +316,6 @@ class MeteoSwissClient(
         val dayForecast = forecastChart.find{forecastChart ->
             val minTime = localDateTimeFromEpoch(forecastChart.min_date).minusSeconds(1)
             val maxTime = localDateTimeFromEpoch(forecastChart.max_date).plusSeconds(1)
-            println("(CP $postalCode) Day time ranges $minTime - $maxTime. Query time $queryTime")
             queryTime.isAfter(minTime) && queryTime.isBefore(maxTime) }
         if(dayForecast == null) {
             throw Exception("Error while obtaining meteo forecast chart temperature (CP $postalCode). Error: no forecast available for queried time.")
@@ -327,7 +326,6 @@ class MeteoSwissClient(
             temperatureInterval ->
             val minTime = localDateTimeFromEpoch(temperatureInterval.get(0).get(0).toLong())
             val maxTime = localDateTimeFromEpoch(temperatureInterval.get(1).get(0).toLong())
-            println("Time ranges $minTime - $maxTime. Query time $queryTime")
             queryTime.isAfter(minTime.minusSeconds(1)) && queryTime.isBefore(maxTime.plusSeconds(1))
         }
 

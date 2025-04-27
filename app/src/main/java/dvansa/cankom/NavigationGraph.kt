@@ -31,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dvansa.cankom.main.MainScreen
+import dvansa.cankom.main.MainViewModel
 import dvansa.cankom.maproute.MapRouteScreen
 import dvansa.cankom.meteo.MeteoSwissClient
 import dvansa.cankom.model.AppController
@@ -51,7 +52,7 @@ fun NavigationGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavDestinations.MAP_ROUTE_ROUTE,
+        startDestination = NavDestinations.MAIN_ROUTE,
         modifier = modifier
     ) {
         composable(
@@ -60,7 +61,37 @@ fun NavigationGraph(
             MainScreen(
                 onEditButton = { navActions.navigateToUserEdit() },
                 onMapRouteButton = { navActions.navigateToMapRoute()},
-                modifier = modifier
+                onRefresh = {
+                    context ->
+                    val startTime = System.currentTimeMillis()
+                    appController.checkCommutePrecipitation(useCached = false)
+                    val precipitationTime = System.currentTimeMillis()
+                    appController.checkCommuteTemperatureRange(context = context, useCached = false)
+                    val temperatureTime = System.currentTimeMillis()
+                    println("Query times. Precipitation = ${precipitationTime - startTime} ms. Temperature = ${temperatureTime - precipitationTime} ms")
+                },
+                modifier = modifier,
+                viewModel = MainViewModel(
+                    getAllowedTemperatureRange = {
+                        val commuteParams = appController.getCommuteParameters()
+                        Pair(commuteParams.minTemperature, commuteParams.maxTemperature)
+                    },
+                    getCommuteTemperatureRange = {
+                        appController.checkCommuteTemperatureRange()
+                    },
+                    checkPrecipitationsInRoute = {
+                        appController.checkCommutePrecipitation().let {
+                            it?.first?.isNotEmpty()
+                        }
+                    },
+                    checkRouteAvailable = {
+                        appController.getCommuteRoute().size > 1
+                    },
+                    getNextCommuteTime = {
+                        // TODO assuming +2 GMT.
+                        appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
+                    }
+                )
             )
         }
         composable(NavDestinations.USER_EDIT_ROUTE) {
@@ -96,10 +127,11 @@ fun NavigationGraph(
                 initialState = dvansa.cankom.maproute.InitialState(route=appController.getCommuteRoute()),
                 onSaveRoute = { newRoute -> appController.setCommuteRoute(newRoute)},
                 onBack = { navActions.navigateToMain() },
-                checkPrecipitationCommute = suspend {
-                    appController.checkCommutePrecipitation() },
+                checkPrecipitationCommute = {
+                    appController.checkCommutePrecipitation()
+                },
                 checkTemperatureCommute = {
-                    context -> appController.checkCommuteTemperature(context)
+                    context -> appController.checkCommuteTemperatureRange(context)
                 },
                 modifier = modifier
             )

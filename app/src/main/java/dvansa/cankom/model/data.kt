@@ -39,6 +39,6 @@ data class TimePoint(
 data class CommuteParameters (
     var minTemperature : Int = 0,
     var maxTemperature : Int = 30,
-    var leaveTime : TimePoint = TimePoint(hour=8, min=0),
-    var arriveTime : TimePoint = TimePoint(hour=8, min=30),
+    var leaveTime : TimePoint = TimePoint(hour=22, min=0),
+    var arriveTime : TimePoint = TimePoint(hour=22, min=30),
 )

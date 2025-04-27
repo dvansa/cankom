@@ -36,6 +36,8 @@ import android.location.Geocoder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import java.time.LocalDateTime
+import kotlin.math.min
+import kotlin.math.max
 
 // Queries to meteorological data are made every <QUERY_TIME_RESOLUTION_MINUTES> minutes.
 // Highly impacts app processing performance and latency.
@@ -48,6 +50,10 @@ class AppController(val meteoClient : MeteoClient) {
     private val _commuteParams = CommuteParameters()
     private var _route: MapPath = listOf()
 
+    // Cached meteo data
+    private var _precipitationRegions : Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? = null
+    private var _temperatureRange : Pair<Int, Int>? = null
+
     // Commute Parameters
     fun setCommuteTemperatureRange(minTemperature : Int? = null, maxTemperature : Int? = null) {
         minTemperature?.let {
@@ -56,6 +62,8 @@ class AppController(val meteoClient : MeteoClient) {
         maxTemperature?.let {
             _commuteParams.maxTemperature = it
         }
+        // Invalidate cache
+        _temperatureRange = null
     }
 
     fun setCommuteTime(leaveTime: TimePoint? = null, arriveTime: dvansa.cankom.model.TimePoint? = null) {
@@ -65,6 +73,9 @@ class AppController(val meteoClient : MeteoClient) {
         arriveTime?.let {
             _commuteParams.arriveTime = it
         }
+        // Invalidate cache
+        _temperatureRange = null
+        _precipitationRegions = null
     }
 
     fun getCommuteParameters() : CommuteParameters {
@@ -74,13 +85,16 @@ class AppController(val meteoClient : MeteoClient) {
     // Route
     fun setCommuteRoute(newRoute : MapPath) {
         _route = newRoute
+        // Invalidate cache
+        _temperatureRange = null
+        _precipitationRegions = null
     }
 
     fun getCommuteRoute() : MapPath {
         return _route
     }
 
-    suspend fun getNextCommuteTimes() : List<LocalDateTime> {
+    fun getNextCommuteTimes(minutesResolution : Int? = null) : List<LocalDateTime> {
         if (ZonedDateTime.now().offset.id != "+02:00") {
             throw Exception("Can only query in GMT+2 time zone.")
         }
@@ -89,14 +103,17 @@ class AppController(val meteoClient : MeteoClient) {
         val queryTimes = getQueryCommuteTimes(
             _commuteParams.leaveTime,
             _commuteParams.arriveTime,
-            QUERY_TIME_RESOLUTION_MINUTES
+            minutesResolution ?: QUERY_TIME_RESOLUTION_MINUTES
         ).map{ it.minusHours(timeZoneHourOffset.toLong()) }
         return queryTimes
     }
 
-    // Validate commute with precipitation data-
-    // Returns intersecting regions with route and other near precipitation regions.
-    suspend fun checkCommutePrecipitation() : Pair<List<PrecipitationRegion>, List<PrecipitationRegion>> {
+    // Returns intersecting regions with commute route and other near precipitation regions.
+    suspend fun checkCommutePrecipitation(useCached : Boolean = true) : Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? {
+        if(useCached && _precipitationRegions != null) {
+            return _precipitationRegions!!
+        }
+
         val queryTimes = getNextCommuteTimes()
         queryTimes.forEach{println("Querying precipitation at time $it GMT+0")}
 
@@ -106,78 +123,96 @@ class AppController(val meteoClient : MeteoClient) {
 
         var closePrecipitationRegions : List<PrecipitationRegion> = listOf()
         var intersectingPrecipitationRegions : List<PrecipitationRegion> = listOf()
+        var resultsPrecipitation : List<List<PrecipitationRegion>?> = listOf()
         coroutineScope {
-            val resultsPrecipitation = queryTimes.map {
+            resultsPrecipitation = queryTimes.map {
                 async {
-                    meteoClient.getPrecipitationRadarData(
-                        it.year,
-                        it.monthValue,
-                        it.dayOfMonth,
-                        it.hour,
-                        it.minute
-                    )
+                    var precipitationData: List<PrecipitationRegion>? = null
+                    try {
+                        precipitationData = meteoClient.getPrecipitationRadarData(
+                            it.year,
+                            it.monthValue,
+                            it.dayOfMonth,
+                            it.hour,
+                            it.minute
+                        )
+                    } catch (e: Exception) {
+                        println("Could not get precipitation radar data.")
+                    }
+                    precipitationData
                 }
             }.awaitAll()
+        }
 
-            val routePoints = _route.map{ Vec2d(it.latitude, it.longitude) }
+        // Ensure all precipitation queries are successful. Otherwise return null.
+        if( resultsPrecipitation.find{it == null} != null) {
+            return null
+        }
 
-            for ((i, precipitationRegions) in resultsPrecipitation.withIndex()) {
-                // Filter out regions far away from commute route with simple AABB checks.
-                val aabbRegions: List<Triple<Int, Vec2d, Vec2d>> = precipitationRegions.mapIndexed {
-                    index, it ->
-                    val (polyMin, polyMax) = getLatLngBoundingBox(it.polygon)
-                    Triple(index, polyMin, polyMax)
-                }
-                val closeRouteRegions = aabbRegions.filter{
-                    bboxOverlap(it.second, it.third, routeMin, routeMax)
-                }
+        val routePoints = _route.map{ Vec2d(it.latitude, it.longitude) }
 
-                // Fine-grained precipitation region intersection with route path.
-                val intersectingRouteRegions = closeRouteRegions.map{
-                    // Get original region polygon and convert to vector coordinates.
-                    Pair<Int, List<Vec2d>>(it.first, precipitationRegions[it.first].polygon.map { Vec2d(it.latitude, it.longitude)})
-                }.filter {
-                    // Check for each route segment if at least intersects with one precipitation region polygon segment.
-                    var intersects = false
-                    for (routePoints in routePoints.windowed(2)) {
-                            for (regionPoints in it.second.windowed(2)) {
-                                // Check if segments intersect.
-                                intersects = intersects || linesIntersect(regionPoints.get(0), regionPoints.get(1), routePoints.get(0), routePoints.get(1))
-                            }
-                    }
-                    // Otherwise, there is also the case where the precipitation region encloses the whole route without intersecting any segments.
-                    // In that case, pick first route point and check if it's contained within the polygon.
-                    if(!intersects && !routePoints.isEmpty()) {
-                        intersects = pointContainedInPolygon(routePoints.get(0), it.second)
-                    }
-                    intersects
-                }
+        for ((i, queriedPrecipitationRegions) in resultsPrecipitation.withIndex()) {
+            val precipitationRegions = queriedPrecipitationRegions!!
+            // Filter out regions far away from commute route with simple AABB checks.
+            val aabbRegions: List<Triple<Int, Vec2d, Vec2d>> = precipitationRegions.mapIndexed {
+                index, it ->
+                val (polyMin, polyMax) = getLatLngBoundingBox(it.polygon)
+                Triple(index, polyMin, polyMax)
+            }
+            val closeRouteRegions = aabbRegions.filter{
+                bboxOverlap(it.second, it.third, routeMin, routeMax)
+            }
 
-                // Resulting close precipitation regions.
-                closePrecipitationRegions = closeRouteRegions.map{
-                    precipitationRegions[it.first]
+            // Fine-grained precipitation region intersection with route path.
+            val intersectingRouteRegions = closeRouteRegions.map{
+                // Get original region polygon and convert to vector coordinates.
+                Pair<Int, List<Vec2d>>(it.first, precipitationRegions[it.first].polygon.map { Vec2d(it.latitude, it.longitude)})
+            }.filter {
+                // Check for each route segment if at least intersects with one precipitation region polygon segment.
+                var intersects = false
+                for (routePoints in routePoints.windowed(2)) {
+                        for (regionPoints in it.second.windowed(2)) {
+                            // Check if segments intersect.
+                            intersects = intersects || linesIntersect(regionPoints.get(0), regionPoints.get(1), routePoints.get(0), routePoints.get(1))
+                        }
                 }
-                // Resulting intersecting precipitation regions.
-                intersectingPrecipitationRegions = closeRouteRegions.filter{
-                    intersectingRouteRegions.find { it2 -> it2.first == it.first} != null
-                }.map {
-                    precipitationRegions[it.first]
+                // Otherwise, there is also the case where the precipitation region encloses the whole route without intersecting any segments.
+                // In that case, pick first route point and check if it's contained within the polygon.
+                if(!intersects && !routePoints.isEmpty()) {
+                    intersects = pointContainedInPolygon(routePoints.get(0), it.second)
                 }
-                println("T$i) Received ${precipitationRegions.size} regions -> ${closeRouteRegions.size} regions close to route -> ${intersectingRouteRegions.size} intersecting regions.")
+                intersects
+            }
 
-                // Already found precipitation regions intersecting commute route. Skip rest of times.
-                if(!intersectingPrecipitationRegions.isEmpty()) {
-                    break
-                }
+            // Resulting close precipitation regions.
+            closePrecipitationRegions = closeRouteRegions.map{
+                precipitationRegions[it.first]
+            }
+            // Resulting intersecting precipitation regions.
+            intersectingPrecipitationRegions = closeRouteRegions.filter{
+                intersectingRouteRegions.find { it2 -> it2.first == it.first} != null
+            }.map {
+                precipitationRegions[it.first]
+            }
+            println("T$i) Received ${precipitationRegions.size} regions -> ${closeRouteRegions.size} regions close to route -> ${intersectingRouteRegions.size} intersecting regions.")
+
+            // Already found precipitation regions intersecting commute route. Skip rest of times.
+            if(!intersectingPrecipitationRegions.isEmpty()) {
+                break
             }
         }
 
-        return Pair(intersectingPrecipitationRegions, closePrecipitationRegions)
+        _precipitationRegions = Pair(intersectingPrecipitationRegions, closePrecipitationRegions)
+        return _precipitationRegions!!
     }
 
-    suspend fun checkCommuteTemperature(context : Context) : Boolean {
-        if(_route.size < 2) {
-            return false
+    suspend fun checkCommuteTemperatureRange(context : Context? = null, useCached : Boolean = true) : Pair<Int,Int>? {
+        if(useCached && _temperatureRange != null) {
+            return _temperatureRange
+        }
+
+        if(_route.size < 2 || context == null) {
+            return null
         }
 
         var postalCodes = mutableSetOf<Int>()
@@ -197,7 +232,7 @@ class AppController(val meteoClient : MeteoClient) {
         println("Querying postal codes for temperature ranges: $postalCodes")
 
         val queryTimes = getNextCommuteTimes()
-        var temperatures = listOf<Int?>()
+        var queriedTemperatures = listOf<Int?>()
         coroutineScope {
             var temperatureQueries = mutableListOf<Deferred<Int?>>()
             for (queryTime in listOf(queryTimes.first(), queryTimes.last()) ){
@@ -220,18 +255,23 @@ class AppController(val meteoClient : MeteoClient) {
                     })
                 }
             }
-            temperatures = temperatureQueries.awaitAll()
+            queriedTemperatures = temperatureQueries.awaitAll()
         }
+
+        val temperatures = queriedTemperatures.filter{it != null}.map{it!!}
+        if (temperatures.isEmpty()) {
+            return null
+        }
+
         // If any of the ranges are outside of min/max allowed temperatures fail check.
-        for (minMaxTemperature in temperatures.filter{it != null}.map{it!!}) {
-            if (minMaxTemperature < _commuteParams.minTemperature) {
-                println("Found colder temperature ${minMaxTemperature} (commute min temp: ${_commuteParams.minTemperature})")
-                return false
-            } else if (minMaxTemperature > _commuteParams.maxTemperature) {
-                println("Found warmer temperature ${minMaxTemperature} (commute max temp: ${_commuteParams.maxTemperature})")
-                return false
-            }
+        var minTemperature : Int = 9e6.toInt()
+        var maxTemperature : Int = (-9e6).toInt()
+        for (minMaxTemperature in temperatures) {
+            minTemperature = min(minTemperature,  minMaxTemperature)
+            maxTemperature = max(maxTemperature,  minMaxTemperature)
         }
-        return true
+
+        _temperatureRange = Pair(minTemperature, maxTemperature)
+        return _temperatureRange!!
     }
 }

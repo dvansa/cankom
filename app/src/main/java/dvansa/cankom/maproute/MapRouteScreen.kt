@@ -80,8 +80,8 @@ fun MapRouteScreen(
     initialState: InitialState,
     onSaveRoute: (MapPath) -> Unit,
     onBack: () -> Unit,
-    checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>,
-    checkTemperatureCommute: suspend (Context) -> Boolean,
+    checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>?,
+    checkTemperatureCommute: suspend (Context) -> Pair<Int,Int>?,
     modifier: Modifier = Modifier,
     viewModel: MapRouteViewModel = MapRouteViewModel(
         MapRouteUiState(route=initialState.route.map {
@@ -103,25 +103,16 @@ fun MapRouteScreen(
 
             // TODO. Remove, only used to test Meteo API
             Button(onClick = {
-
                 viewModel.viewModelScope.launch {
                     try {
-
-                        val (intersectingPrecipitationRegions, closePrecipitationRegions) = checkPrecipitationCommute()
+                        val (intersectingPrecipitationRegions, closePrecipitationRegions) = checkPrecipitationCommute().let {
+                            it ?: Pair<List<PrecipitationRegion>,List<PrecipitationRegion>>(listOf(), listOf())
+                        }
                         viewModel.setPrecipitationRegions(intersectingPrecipitationRegions, closePrecipitationRegions)
-
-//                        val client = MeteoSwissClient()
-//                        val response = client.getPrecipitationRadarData(2025, 4, 21, 15, 0)
-//
-//                        println("Precipitation num regions ${response.size}")
-//                        println("Precipitation region 0 polygon:  ${response[0].polygon}")
-//
-//                        viewModel.setPrecipitationRegions(response.filter {it.intensity > -1})
                     } catch (e: Exception) {
                         println("Http error while getting radar data: ${e.message}")
                     }
                 }
-
             }) {
                 Icon(Icons.Filled.Refresh, contentDescription = "Test Query")
             }
