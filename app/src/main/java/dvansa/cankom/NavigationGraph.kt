@@ -24,8 +24,10 @@
 package dvansa.cankom
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -39,7 +41,7 @@ import dvansa.cankom.model.TimePoint
 import dvansa.cankom.useredit.InitialState
 import dvansa.cankom.useredit.UserEditScreen
 import kotlinx.coroutines.CoroutineScope
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -47,8 +49,16 @@ fun NavigationGraph(
     modifier: Modifier = Modifier,
     appController : AppController = AppController(MeteoSwissClient()),
     navController: NavHostController = rememberNavController(),
+    navCorountineScope : CoroutineScope = rememberCoroutineScope(),
     navActions : NavActions = NavActions(navController),
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        navCorountineScope.launch() {
+            appController.loadModel(context)
+            println("Loaded Model")
+        }
+    }
     NavHost(
         navController = navController,
         startDestination = NavDestinations.MAIN_ROUTE,
@@ -61,7 +71,7 @@ fun NavigationGraph(
                 onEditButton = { navActions.navigateToUserEdit() },
                 onMapRouteButton = { navActions.navigateToMapRoute()},
                 onRefresh = {
-                    context, useCached ->
+                        context, useCached ->
                     val startTime = System.currentTimeMillis()
                     appController.checkCommutePrecipitation(useCached = useCached)
                     val precipitationTime = System.currentTimeMillis()
@@ -105,32 +115,42 @@ fun NavigationGraph(
                     )
                 }(),
                 onSaveUserParameters = {
-                    minTemperature, maxTemperature, leaveTime, arriveTime ->
-                        appController.setCommuteTime(
-                            leaveTime=TimePoint(hour=leaveTime.hour, min= leaveTime.min),
-                            arriveTime=TimePoint(hour=arriveTime.hour, min= arriveTime.min)
-                        )
-                        appController.setCommuteTemperatureRange(
-                            minTemperature=minTemperature,
-                            maxTemperature=maxTemperature
-                        )
+                        minTemperature, maxTemperature, leaveTime, arriveTime ->
+                    appController.setCommuteTime(
+                        leaveTime=TimePoint(hour=leaveTime.hour, min= leaveTime.min),
+                        arriveTime=TimePoint(hour=arriveTime.hour, min= arriveTime.min)
+                    )
+                    appController.setCommuteTemperatureRange(
+                        minTemperature=minTemperature,
+                        maxTemperature=maxTemperature
+                    )
+                    navCorountineScope.launch {
+                        appController.saveModel(context)
+                        println("Saved Model")
+                    }
                 },
                 onBack = {
                     navActions.navigateToMain()
-                 },
+                },
                 modifier = modifier)
         }
 
         composable(NavDestinations.MAP_ROUTE_ROUTE) {
             MapRouteScreen(
                 initialState = dvansa.cankom.maproute.InitialState(route=appController.getCommuteRoute()),
-                onSaveRoute = { newRoute -> appController.setCommuteRoute(newRoute)},
+                onSaveRoute = {
+                    newRoute -> appController.setCommuteRoute(newRoute)
+                    navCorountineScope.launch {
+                        appController.saveModel(context)
+                        println("Saved Model")
+                    }
+                },
                 onBack = { navActions.navigateToMain() },
                 checkPrecipitationCommute = {
                     appController.checkCommutePrecipitation()
                 },
                 checkTemperatureCommute = {
-                    context -> appController.checkCommuteTemperatureRange(context)
+                        context -> appController.checkCommuteTemperatureRange(context)
                 },
                 modifier = modifier
             )

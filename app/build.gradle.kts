@@ -95,6 +95,8 @@ dependencies {
     // Vec Math
     implementation("kotlin.graphics:glm:0.9.9.1-11")
 
+    implementation("androidx.datastore:datastore:1.1.5")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
