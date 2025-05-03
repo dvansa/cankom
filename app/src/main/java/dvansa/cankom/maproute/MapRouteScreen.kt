@@ -130,8 +130,14 @@ fun MapRouteScreen(
                 thickness = 1.dp,
             )
 
-            // Initial position at Zürich
-            val startPosition = LatLng(47.3769, 8.54173)
+            val startPosition =
+                when (uiState.route.isEmpty()) {
+                    // Initial position at Zürich if no route has been defined.
+                    true -> LatLng(47.3769, 8.54173)
+                    // Otherwise, take starting position from route.
+                    false -> uiState.route.first()
+                }
+
             val cameraPositionState =
                 rememberCameraPositionState {
                     position = CameraPosition.fromLatLngZoom(startPosition, 14.5f)
