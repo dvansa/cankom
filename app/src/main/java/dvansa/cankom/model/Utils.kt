@@ -83,8 +83,8 @@ fun getLatLngBoundingBox(
     if (marginInKm > 0.0) {
         // Convert tolerance in km to deg
         val latTolerance = ROUTE_DISTANCE_TOL_IN_KM / 110.574
-        val lngToleranceMin = ROUTE_DISTANCE_TOL_IN_KM / (glm.cos(bbMin.x) * 111.320)
-        val lngToleranceMax = ROUTE_DISTANCE_TOL_IN_KM / (glm.cos(bbMax.x) * 111.320)
+        val lngToleranceMin = ROUTE_DISTANCE_TOL_IN_KM / (glm.cos(glm.radians(bbMin.x)) * 111.320)
+        val lngToleranceMax = ROUTE_DISTANCE_TOL_IN_KM / (glm.cos(glm.radians(bbMax.x)) * 111.320)
 
         bbMin = bbMin - Vec2d(latTolerance, lngToleranceMin)
         bbMax = bbMax + Vec2d(latTolerance, lngToleranceMax)
