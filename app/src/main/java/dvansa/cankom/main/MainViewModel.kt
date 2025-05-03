@@ -56,7 +56,7 @@ class MainViewModel(
     getCommuteTemperatureRange: suspend () -> Pair<Int, Int>?,
     checkPrecipitationsInRoute: suspend () -> Boolean?,
     checkRouteAvailable: suspend () -> Boolean,
-    getNextCommuteTime: () -> LocalDateTime,
+    getNextCommuteTime: () -> LocalDateTime?,
     mainUiState: MainUiState = MainUiState(),
 ) : ViewModel() {
     private val getAllowedTemperatureRangeFn = getAllowedTemperatureRange

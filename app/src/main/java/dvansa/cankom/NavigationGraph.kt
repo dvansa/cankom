@@ -43,6 +43,7 @@ import dvansa.cankom.useredit.InitialState
 import dvansa.cankom.useredit.UserEditScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.ZonedDateTime
 
 @Composable
 @Suppress("ktlint:standard:function-naming")
@@ -101,8 +102,13 @@ fun NavigationGraph(
                                 appController.getCommuteRoute().size > 1
                             },
                             getNextCommuteTime = {
-                                // TODO assuming +2 GMT.
-                                appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
+                                val timeZoneOffsetid = ZonedDateTime.now().offset.id
+                                if (timeZoneOffsetid != "+02:00") {
+                                    println("Must be in GMT+2 to query getNextCommuteTime(). (Zone $timeZoneOffsetid).")
+                                    null
+                                } else {
+                                    appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
+                                }
                             },
                         )
                     },
