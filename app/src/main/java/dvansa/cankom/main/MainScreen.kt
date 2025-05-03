@@ -189,9 +189,21 @@ fun CommuteStatus(
     } else {
         Column(modifier = Modifier.fillMaxHeight(fraction = commuteStatusHeightFraction)) {
             if (nextCommuteTime != null) {
+                val firstCharCapitalizedDayOfWeek =
+                    String(
+                        nextCommuteTime.dayOfWeek
+                            .toString()
+                            .mapIndexed { idx, c ->
+                                if (idx == 0) {
+                                    c.uppercaseChar()
+                                } else {
+                                    c.lowercaseChar()
+                                }
+                            }.toCharArray(),
+                    )
                 Text(
                     String.format(
-                        "Next commute ${nextCommuteTime.dayOfWeek} at %02d:%02d",
+                        "Next commute $firstCharCapitalizedDayOfWeek at %02d:%02d",
                         nextCommuteTime.hour,
                         nextCommuteTime.minute,
                     ),
@@ -208,10 +220,10 @@ fun CommuteStatus(
                             CommuteState.PRECIPITATION_UNKNOWN -> "$EMOJI_WARNING Precipitation data unavailable."
                             CommuteState.TEMPERATURE_UNKNOWN -> "$EMOJI_WARNING Temperature data unavailable."
                             CommuteState.TEMPERATURE_HOT ->
-                                "$EMOJI_NO_ENTRY $EMOJI_HEATED_FACE Hot temperatures reaching ${it.param1.toInt()} °C" +
+                                "$EMOJI_NO_ENTRY $EMOJI_HEATED_FACE Hot temperatures reaching ${it.param1.toInt()} °C " +
                                     "(higher than ${it.param2.toInt()} °C)."
                             CommuteState.TEMPERATURE_COLD ->
-                                "$EMOJI_NO_ENTRY $EMOJI_COLD_FACE Cold temperatures reaching ${it.param1.toInt()} °C" +
+                                "$EMOJI_NO_ENTRY $EMOJI_COLD_FACE Cold temperatures reaching ${it.param1.toInt()} °C " +
                                     "(lower than ${it.param2.toInt()} °C)."
                             CommuteState.PRECIPITATION -> "$EMOJI_NO_ENTRY $EMOJI_RAIN_CLOUD Precipitations on commute route."
                         }

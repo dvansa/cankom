@@ -58,7 +58,6 @@ fun NavigationGraph(
     LaunchedEffect(Unit) {
         navCorountineScope.launch {
             appController.loadModel(context)
-            println("Loaded Model")
         }
     }
     NavHost(
@@ -137,7 +136,6 @@ fun NavigationGraph(
                     )
                     navCorountineScope.launch {
                         appController.saveModel(context)
-                        println("Saved Model")
                     }
                 },
                 onBack = {
@@ -154,15 +152,11 @@ fun NavigationGraph(
                     appController.setCommuteRoute(newRoute)
                     navCorountineScope.launch {
                         appController.saveModel(context)
-                        println("Saved Model")
                     }
                 },
                 onBack = { navActions.navigateToMain() },
                 checkPrecipitationCommute = {
                     appController.checkCommutePrecipitation()
-                },
-                checkTemperatureCommute = { context ->
-                    appController.checkCommuteTemperatureRange(context)
                 },
                 modifier = modifier,
             )

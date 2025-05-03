@@ -276,7 +276,7 @@ class MeteoSwissClient(
         // Query precipitation product version
         var precipitationProductVersion: String? = null
         try {
-            precipitationProductVersion = queryApiProductVersion().get(PRECIPITATION_PRODUCT_NAME)
+            precipitationProductVersion = queryApiProductVersion()[PRECIPITATION_PRODUCT_NAME]
         } catch (e: Exception) {
             throw Exception("Error while obtaining meteo api versions. Error: ${e.message}.")
         }
@@ -304,7 +304,7 @@ class MeteoSwissClient(
         val precipitationRegions: MutableList<PrecipitationRegion> = mutableListOf()
         for (area in radarData.areas) {
             val intensity =
-                MAP_COLOR_TO_INTENSITY.get(area.color).let {
+                MAP_COLOR_TO_INTENSITY[area.color].let {
                     if (it == null) {
                         println("Unrecognised color (#${area.color}) for precipitation intensity level")
                         -1
@@ -336,7 +336,7 @@ class MeteoSwissClient(
         // Query forecast chart product version
         var forecastChartProductVersion: String? = null
         try {
-            forecastChartProductVersion = queryApiProductVersion().get(FORECAST_CHART_PRODUCT_NAME)
+            forecastChartProductVersion = queryApiProductVersion()[FORECAST_CHART_PRODUCT_NAME]
         } catch (e: Exception) {
             throw Exception("Error while obtaining meteo api versions. Error: ${e.message}.")
         }
@@ -371,8 +371,8 @@ class MeteoSwissClient(
         // Find temperature interval.
         val temperatureInterval =
             dayForecast.temperature.windowed(2).find { temperatureInterval ->
-                val minTime = localDateTimeFromEpoch(temperatureInterval.get(0).get(0).toLong())
-                val maxTime = localDateTimeFromEpoch(temperatureInterval.get(1).get(0).toLong())
+                val minTime = localDateTimeFromEpoch(temperatureInterval[0][0].toLong())
+                val maxTime = localDateTimeFromEpoch(temperatureInterval[1][0].toLong())
                 queryTime.isAfter(minTime.minusSeconds(1)) && queryTime.isBefore(maxTime.plusSeconds(1))
             }
 
@@ -383,7 +383,7 @@ class MeteoSwissClient(
         }
 
         // TODO interpolate instead of average.
-        val temperature = (temperatureInterval.get(0).get(1) + temperatureInterval.get(1).get(1)) / 2.0
+        val temperature = (temperatureInterval[0][1] + temperatureInterval[1][1]) / 2.0
         println("Forecast chart temperature at $queryTime -> $temperature C")
 
         return temperature.toInt()

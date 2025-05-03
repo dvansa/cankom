@@ -23,7 +23,6 @@
 */
 package dvansa.cankom.maproute
 
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,7 +62,7 @@ import dvansa.cankom.model.MapPath
 import kotlinx.coroutines.launch
 
 data class InitialState(
-    val route: dvansa.cankom.model.MapPath,
+    val route: MapPath,
 )
 
 val MAP_INTENSITY_TO_COLOR: Map<Int, Color> =
@@ -88,7 +87,6 @@ fun MapRouteScreen(
     onSaveRoute: (MapPath) -> Unit,
     onBack: () -> Unit,
     checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>?,
-    checkTemperatureCommute: suspend (Context) -> Pair<Int, Int>?,
     modifier: Modifier = Modifier,
     viewModel: MapRouteViewModel =
         MapRouteViewModel(
@@ -141,11 +139,11 @@ fun MapRouteScreen(
             Row {
                 Column {
                     Text(
-                        text = "Click: add waypoint.  ",
+                        text = "Click: Add waypoint.",
                         modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.horizontal_small_margin)),
                     )
                     Text(
-                        text = "Long Click: reset route.",
+                        text = "Long Click: Reset route.",
                         modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.horizontal_small_margin)),
                     )
                 }
@@ -196,7 +194,7 @@ fun MapRouteScreen(
                     Polygon(
                         points = region.polygon.map { LatLng(it.latitude, it.longitude) },
                         fillColor =
-                            MAP_INTENSITY_TO_COLOR.get(region.intensity) ?: Color(0xFFFFFFFF),
+                            MAP_INTENSITY_TO_COLOR[region.intensity] ?: Color(0xFFFFFFFF),
                         strokeWidth = 0.0f,
                     )
                 }
@@ -216,7 +214,7 @@ fun MapRouteScreen(
                 )
                 if (!uiState.route.isEmpty()) {
                     Circle(
-                        center = uiState.route.get(0),
+                        center = uiState.route[0],
                         fillColor = Color(0xFFC04DD1),
                         strokeColor = Color(0xFFC04DD1),
                         radius = 21.0,

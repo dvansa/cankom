@@ -67,7 +67,6 @@ class AppController(
     }
 
     suspend fun saveModel(context: Context) {
-        println("Save Model")
         context.modelDataStore.updateData { currentModel ->
             currentModel.copy(commuteParams = model.commuteParams, route = model.route)
         }
@@ -132,7 +131,6 @@ class AppController(
 
     // Returns intersecting regions with commute route and other near precipitation regions.
     suspend fun checkCommutePrecipitation(useCached: Boolean = true): Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? {
-        println("!!! cache $useCached , ${precipitationRegions == null}")
         if (useCached && precipitationRegions != null) {
             return precipitationRegions!!
         }
@@ -204,13 +202,18 @@ class AppController(
                                 // Check if segments intersect.
                                 intersects =
                                     intersects ||
-                                    linesIntersect(regionPoints.get(0), regionPoints.get(1), routePoints.get(0), routePoints.get(1))
+                                    linesIntersect(
+                                        regionPoints[0],
+                                        regionPoints[1],
+                                        routePoints[0],
+                                        routePoints[1],
+                                    )
                             }
                         }
                         // Otherwise, there is also the case where the precipitation region encloses the whole route without intersecting any segments.
                         // In that case, pick first route point and check if it's contained within the polygon.
                         if (!intersects && !routePoints.isEmpty()) {
-                            intersects = pointContainedInPolygon(routePoints.get(0), it.second)
+                            intersects = pointContainedInPolygon(routePoints[0], it.second)
                         }
                         intersects
                     }
