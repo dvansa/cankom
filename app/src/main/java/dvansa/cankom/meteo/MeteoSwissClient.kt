@@ -24,7 +24,6 @@
 package dvansa.cankom.meteo
 
 import dvansa.cankom.model.LatLng
-import dvansa.cankom.model.MapPath
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
@@ -47,108 +46,110 @@ const val URL_SUB_VERSION = "versions.json"
 const val PRECIPITATION_PRODUCT_NAME = "inca/precipitation/rate"
 const val FORECAST_CHART_PRODUCT_NAME = "forecast-chart"
 
-val MAP_COLOR_TO_INTENSITY : Map<String, Int> = mapOf(
-    "9a7e95" to 0,
-    "0001fc" to 1,
-    "058c2d" to 2,
-    "05ff05" to 3,
-    "feff01" to 4,
-    "ffc703" to 5,
-    "ff7d01" to 6,
-    // TODO missing values for last 2 levels.
-    "<RED>" to 7,
-    "<PURPLE>" to 8
-)
+val MAP_COLOR_TO_INTENSITY: Map<String, Int> =
+    mapOf(
+        "9a7e95" to 0,
+        "0001fc" to 1,
+        "058c2d" to 2,
+        "05ff05" to 3,
+        "feff01" to 4,
+        "ffc703" to 5,
+        "ff7d01" to 6,
+        // TODO missing values for last 2 levels.
+        "<RED>" to 7,
+        "<PURPLE>" to 8,
+    )
 
 // Response JSON data -- Precipitation
 @Serializable
 data class RadarDataCoordinates(
-    val system : String,
-    val x_min : Double,
-    val x_max : Double,
-    val x_count : Int,
-    val y_min : Double,
-    val y_max : Double,
-    val y_count : Int
+    val system: String,
+    val x_min: Double,
+    val x_max: Double,
+    val x_count: Int,
+    val y_min: Double,
+    val y_max: Double,
+    val y_count: Int,
 )
 
 @Serializable
 data class RadarDataShape(
-    val i : Int,
+    val i: Int,
     val j: Int,
     val l: Int,
-    val d : String,
-    val o : String
+    val d: String,
+    val o: String,
 )
 
 @Serializable
 data class RadarDataArea(
-    val color : String,
-    val shapes : List<List<RadarDataShape>>
+    val color: String,
+    val shapes: List<List<RadarDataShape>>,
 )
 
 @Serializable
 data class RadarData(
-    val coords : RadarDataCoordinates,
-    val areas : List<RadarDataArea>
+    val coords: RadarDataCoordinates,
+    val areas: List<RadarDataArea>,
 )
 
 // Response JSON data -- Forecast chart
 
 @Serializable
 data class ForecastSymbol(
-    val weather_symbol_id : Int,
-    val timestamp : Long
+    val weather_symbol_id: Int,
+    val timestamp: Long,
 )
 
 @Serializable
 data class ForecastWindGustPeak(
-    val data : List<List<Double>>,
+    val data: List<List<Double>>,
 )
 
 @Serializable
 data class ForecastWindSymbol(
-    val symbol_id : String,
-    val timestamp: Long
+    val symbol_id: String,
+    val timestamp: Long,
 )
 
 @Serializable
 data class ForecastWind(
-    val data : List<List<Double>>,
-    val symbols : List<ForecastWindSymbol>
+    val data: List<List<Double>>,
+    val symbols: List<ForecastWindSymbol>,
 )
 
 @Serializable
 data class ForecastChart(
-    val day_string : String,
-    val min_date : Long,
-    val max_date : Long,
-    val sunrise : Long,
-    val sunset : Long,
-    val current_time : Long?, // null?
-    val current_time_string : String?, // null?
-
-    val wind : ForecastWind,
-    val wind_gust_peak : ForecastWindGustPeak,
-
-    val wind_speed_variance : List<List<Double>>,
+    val day_string: String,
+    val min_date: Long,
+    val max_date: Long,
+    val sunrise: Long,
+    val sunset: Long,
+    val current_time: Long?, // null?
+    val current_time_string: String?, // null?
+    val wind: ForecastWind,
+    val wind_gust_peak: ForecastWindGustPeak,
+    val wind_speed_variance: List<List<Double>>,
     // val wind_gust_variance : List<List<Double>>,
-    val wind_gust_speed_variance : List<List<Double>>,
-    val rainfall : List<List<Double>>,
-    val sunshine : List<List<Double>>,
-    val variance_rain : List<List<Double>>,
-    val variance_range : List<List<Double>>,
-    val temperature : List<List<Double>>,
-
+    val wind_gust_speed_variance: List<List<Double>>,
+    val rainfall: List<List<Double>>,
+    val sunshine: List<List<Double>>,
+    val variance_rain: List<List<Double>>,
+    val variance_range: List<List<Double>>,
+    val temperature: List<List<Double>>,
     val symbol_day: ForecastSymbol,
-    val symbols : List<ForecastSymbol>
+    val symbols: List<ForecastSymbol>,
 )
 
-fun convertFromLV0395ToCH(x : Double, y : Double) : Pair<Double, Double> {
-    return Pair(if (x >= 2e6) x - 2e6 else x, if (y >= 1e6) y - 1e6 else y)
-}
+fun convertFromLV0395ToCH(
+    x: Double,
+    y: Double,
+): Pair<Double, Double> = Pair(if (x >= 2e6) x - 2e6 else x, if (y >= 1e6) y - 1e6 else y)
 
-fun convertFromCHToWGS(x: Double, y: Double) : Pair<Double, Double> {
+fun convertFromCHToWGS(
+    x: Double,
+    y: Double,
+): Pair<Double, Double> {
     val (x, y) = convertFromLV0395ToCH(x, y)
     val ux = (x - 6e5) / 1e6
     val uy = (y - 2e5) / 1e6
@@ -156,11 +157,14 @@ fun convertFromCHToWGS(x: Double, y: Double) : Pair<Double, Double> {
     val nx = 2.6779094 + 4.728982 * ux + 0.791484 * ux * uy + 0.1306 * ux * uy.pow(2) - 0.0436 * ux.pow(3)
     val ny = 16.9023892 + 3.238272 * uy - 0.270978 * ux.pow(2) - 0.002528 * uy.pow(2) - 0.0447 * ux.pow(2) * uy - 0.014 * uy.pow(3)
 
-    return Pair(100.0 *  nx / 36.0, 100.0 * ny / 36.0)
+    return Pair(100.0 * nx / 36.0, 100.0 * ny / 36.0)
 }
 
-fun convertShapeToPolygonPath(shape : RadarDataShape, coords: RadarDataCoordinates) : List<LatLng> {
-    val points : MutableList<LatLng> = mutableListOf()
+fun convertShapeToPolygonPath(
+    shape: RadarDataShape,
+    coords: RadarDataCoordinates,
+): List<LatLng> {
+    val points: MutableList<LatLng> = mutableListOf()
     var i = shape.i
     var j = shape.j
 
@@ -169,11 +173,11 @@ fun convertShapeToPolygonPath(shape : RadarDataShape, coords: RadarDataCoordinat
         var v = 0.0
         val z = shape.o[s].digitToInt() / 10.0 + 0.05
         if (i % 2 == 0) {
-            u = coords.x_min + (coords.x_max - coords.x_min) *  (i / 2).toDouble() / coords.x_count.toDouble()
-            v = coords.y_min + (coords.y_max - coords.y_min) *  ((j - 1).toDouble() / 2.0 + z) / coords.y_count.toDouble()
+            u = coords.x_min + (coords.x_max - coords.x_min) * (i / 2).toDouble() / coords.x_count.toDouble()
+            v = coords.y_min + (coords.y_max - coords.y_min) * ((j - 1).toDouble() / 2.0 + z) / coords.y_count.toDouble()
         } else {
-            u = coords.x_min + (coords.x_max - coords.x_min) *  ((i - 1).toDouble() / 2.0 + z) / coords.x_count.toDouble()
-            v = coords.y_min + (coords.y_max - coords.y_min) *  (j / 2.0).toDouble() / coords.y_count.toDouble()
+            u = coords.x_min + (coords.x_max - coords.x_min) * ((i - 1).toDouble() / 2.0 + z) / coords.x_count.toDouble()
+            v = coords.y_min + (coords.y_max - coords.y_min) * (j / 2.0).toDouble() / coords.y_count.toDouble()
         }
 
         val (lng, lat) = convertFromCHToWGS(1e3 * u, 1e3 * v)
@@ -189,12 +193,15 @@ fun convertShapeToPolygonPath(shape : RadarDataShape, coords: RadarDataCoordinat
 }
 
 // Http client builder
-fun getHttpClient() : HttpClient {
-    return HttpClient(engineFactory = Android) {
+fun getHttpClient(): HttpClient =
+    HttpClient(engineFactory = Android) {
         install(plugin = ContentNegotiation) {
-            json(json = Json {
-                ignoreUnknownKeys = true
-            })
+            json(
+                json =
+                    Json {
+                        ignoreUnknownKeys = true
+                    },
+            )
         }
 
         install(plugin = HttpTimeout) {
@@ -203,33 +210,63 @@ fun getHttpClient() : HttpClient {
             socketTimeoutMillis = HTTP_TIMEOUT_IN_MILLISECONDS
         }
     }
-}
 
 class MeteoSwissClient(
-    private val httpClient: HttpClient = getHttpClient()
+    private val httpClient: HttpClient = getHttpClient(),
 ) : MeteoClient {
-    private suspend fun queryApiProductVersion(): Map<String, String> = httpClient.get {
-        url(urlString = "$URL_BASE/$URL_SUB_VERSION")
-    }.body()
+    private suspend fun queryApiProductVersion(): Map<String, String> =
+        httpClient
+            .get {
+                url(urlString = "$URL_BASE/$URL_SUB_VERSION")
+            }.body()
 
-    private suspend fun queryPrecipitationRadarData(productVersion: String, year: Int, month: Int, day: Int, hour: Int, mins: Int): RadarData = httpClient.get {
-        url(urlString = String.format("$URL_BASE/$PRECIPITATION_PRODUCT_NAME/version__$productVersion/rate_%04d%02d%02d_%02d%02d.json", year, month, day, hour, mins))
-    }.body()
+    private suspend fun queryPrecipitationRadarData(
+        productVersion: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        mins: Int,
+    ): RadarData =
+        httpClient
+            .get {
+                url(
+                    urlString =
+                        String.format(
+                            "$URL_BASE/$PRECIPITATION_PRODUCT_NAME/version__$productVersion/rate_%04d%02d%02d_%02d%02d.json",
+                            year,
+                            month,
+                            day,
+                            hour,
+                            mins,
+                        ),
+                )
+            }.body()
 
-    private suspend fun queryForecastChart(productVersion: String, postalCode: Int) : List<ForecastChart> = httpClient.get {
-        val postalCodeFormatted = String.format("%-6s", postalCode).replace(' ', '0')
-        println("Querying $URL_BASE/$FORECAST_CHART_PRODUCT_NAME/version__$productVersion/de/$postalCodeFormatted.json")
-        url(urlString = "$URL_BASE/$FORECAST_CHART_PRODUCT_NAME/version__$productVersion/de/$postalCodeFormatted.json")
-    }.body()
+    private suspend fun queryForecastChart(
+        productVersion: String,
+        postalCode: Int,
+    ): List<ForecastChart> =
+        httpClient
+            .get {
+                val postalCodeFormatted = String.format("%-6s", postalCode).replace(' ', '0')
+                println("Querying $URL_BASE/$FORECAST_CHART_PRODUCT_NAME/version__$productVersion/de/$postalCodeFormatted.json")
+                url(urlString = "$URL_BASE/$FORECAST_CHART_PRODUCT_NAME/version__$productVersion/de/$postalCodeFormatted.json")
+            }.body()
 
-    private fun localDateTimeFromEpoch(timeSinceEpochMillis : Long) : LocalDateTime {
-        return LocalDateTime.ofInstant(
-                Instant.ofEpochMilli(timeSinceEpochMillis),
-                ZoneId.of("UTC")
+    private fun localDateTimeFromEpoch(timeSinceEpochMillis: Long): LocalDateTime =
+        LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(timeSinceEpochMillis),
+            ZoneId.of("UTC"),
         )
-    }
 
-    override suspend fun getPrecipitationRadarData(year: Int, month: Int, day: Int, hour: Int, mins: Int ) : List<PrecipitationRegion> {
+    override suspend fun getPrecipitationRadarData(
+        year: Int,
+        month: Int,
+        day: Int,
+        hour: Int,
+        mins: Int,
+    ): List<PrecipitationRegion> {
         check(mins % 5 == 0 && mins >= 0 && mins <= 55) {
             "Invalid minutes input. Must be a multiple of 5 and between 0 and 55."
         }
@@ -238,10 +275,10 @@ class MeteoSwissClient(
         }
 
         // Query precipitation product version
-        var precipitationProductVersion : String? = null
+        var precipitationProductVersion: String? = null
         try {
             precipitationProductVersion = queryApiProductVersion().get(PRECIPITATION_PRODUCT_NAME)
-        } catch(e:Exception) {
+        } catch (e: Exception) {
             throw Exception("Error while obtaining meteo api versions. Error: ${e.message}.")
         }
 
@@ -250,7 +287,7 @@ class MeteoSwissClient(
         }
 
         // Query radar data at the specified date-time
-        var radarData : RadarData? = null
+        var radarData: RadarData? = null
         try {
             radarData = queryPrecipitationRadarData(precipitationProductVersion, year, month, day, hour, mins)
         } catch (e: Exception) {
@@ -258,24 +295,31 @@ class MeteoSwissClient(
         }
 
         val coordSystem = radarData.coords.system
-        if(coordSystem != "LV95") {
-            throw Exception("Error while obtaining meteo precipitation radar data. Error: only LV95 corod system is supported (received $coordSystem)")
+        if (coordSystem != "LV95") {
+            throw Exception(
+                "Error while obtaining meteo precipitation radar data. Error: only LV95 corod system is supported (received $coordSystem)",
+            )
         }
 
         // Extract precipitation regions
-        val precipitationRegions : MutableList<PrecipitationRegion> = mutableListOf()
+        val precipitationRegions: MutableList<PrecipitationRegion> = mutableListOf()
         for (area in radarData.areas) {
-            val intensity = MAP_COLOR_TO_INTENSITY.get(area.color).let {
-                if (it == null) {
-                    println("Unrecognised color (#${area.color}) for precipitation intensity level")
-                    -1
-                } else it
-            }
+            val intensity =
+                MAP_COLOR_TO_INTENSITY.get(area.color).let {
+                    if (it == null) {
+                        println("Unrecognised color (#${area.color}) for precipitation intensity level")
+                        -1
+                    } else {
+                        it
+                    }
+                }
 
             for (shape in area.shapes) {
                 // TODO handle polygons with interior holes (ie. shape size > 1). At the moment assuming filled polygon.
                 check(shape.isNotEmpty())
-                precipitationRegions.add(PrecipitationRegion(polygon = convertShapeToPolygonPath(shape[0], radarData.coords), intensity = intensity))
+                precipitationRegions.add(
+                    PrecipitationRegion(polygon = convertShapeToPolygonPath(shape[0], radarData.coords), intensity = intensity),
+                )
             }
         }
 
@@ -288,13 +332,13 @@ class MeteoSwissClient(
         month: Int,
         day: Int,
         hour: Int,
-        mins: Int
+        mins: Int,
     ): Int {
         // Query forecast chart product version
-        var forecastChartProductVersion : String? = null
+        var forecastChartProductVersion: String? = null
         try {
             forecastChartProductVersion = queryApiProductVersion().get(FORECAST_CHART_PRODUCT_NAME)
-        } catch(e:Exception) {
+        } catch (e: Exception) {
             throw Exception("Error while obtaining meteo api versions. Error: ${e.message}.")
         }
 
@@ -303,7 +347,7 @@ class MeteoSwissClient(
         }
 
         // Query forecast chart at the specified postal code
-        var forecastChart : List<ForecastChart>? = null
+        var forecastChart: List<ForecastChart>? = null
         try {
             forecastChart = queryForecastChart(forecastChartProductVersion, postalCode)
         } catch (e: Exception) {
@@ -313,24 +357,30 @@ class MeteoSwissClient(
         val queryTime = LocalDateTime.of(year, month, day, hour, mins)
 
         // Check if queried time is within forecast
-        val dayForecast = forecastChart.find{forecastChart ->
-            val minTime = localDateTimeFromEpoch(forecastChart.min_date).minusSeconds(1)
-            val maxTime = localDateTimeFromEpoch(forecastChart.max_date).plusSeconds(1)
-            queryTime.isAfter(minTime) && queryTime.isBefore(maxTime) }
-        if(dayForecast == null) {
-            throw Exception("Error while obtaining meteo forecast chart temperature (CP $postalCode). Error: no forecast available for queried time.")
+        val dayForecast =
+            forecastChart.find { forecastChart ->
+                val minTime = localDateTimeFromEpoch(forecastChart.min_date).minusSeconds(1)
+                val maxTime = localDateTimeFromEpoch(forecastChart.max_date).plusSeconds(1)
+                queryTime.isAfter(minTime) && queryTime.isBefore(maxTime)
+            }
+        if (dayForecast == null) {
+            throw Exception(
+                "Error while obtaining meteo forecast chart temperature (CP $postalCode). Error: no forecast available for queried time.",
+            )
         }
 
         // Find temperature interval.
-        val temperatureInterval = dayForecast.temperature.windowed(2).find {
-            temperatureInterval ->
-            val minTime = localDateTimeFromEpoch(temperatureInterval.get(0).get(0).toLong())
-            val maxTime = localDateTimeFromEpoch(temperatureInterval.get(1).get(0).toLong())
-            queryTime.isAfter(minTime.minusSeconds(1)) && queryTime.isBefore(maxTime.plusSeconds(1))
-        }
+        val temperatureInterval =
+            dayForecast.temperature.windowed(2).find { temperatureInterval ->
+                val minTime = localDateTimeFromEpoch(temperatureInterval.get(0).get(0).toLong())
+                val maxTime = localDateTimeFromEpoch(temperatureInterval.get(1).get(0).toLong())
+                queryTime.isAfter(minTime.minusSeconds(1)) && queryTime.isBefore(maxTime.plusSeconds(1))
+            }
 
-        if(temperatureInterval == null) {
-            throw Exception("Error while obtaining meteo forecast chart temperature. Error: could not find day interval temperature for queried time.")
+        if (temperatureInterval == null) {
+            throw Exception(
+                "Error while obtaining meteo forecast chart temperature. Error: could not find day interval temperature for queried time.",
+            )
         }
 
         // TODO interpolate instead of average.

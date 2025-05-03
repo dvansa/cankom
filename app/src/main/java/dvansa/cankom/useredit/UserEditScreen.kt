@@ -23,8 +23,6 @@
 */
 package dvansa.cankom.useredit
 
-import android.util.TypedValue
-import android.util.TypedValue.applyDimension
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,63 +55,71 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dvansa.cankom.R
 
-
 data class InitialState(
     val minTemperature: Int,
     val maxTemperature: Int,
-    val leaveTime : dvansa.cankom.model.TimePoint,
-    val arriveTime : dvansa.cankom.model.TimePoint
+    val leaveTime: dvansa.cankom.model.TimePoint,
+    val arriveTime: dvansa.cankom.model.TimePoint,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserEditScreen(
-    initialState : InitialState,
-    onSaveUserParameters: (minTemperature: Int, maxTemperature: Int, leaveTime : TimePoint, arriveTime : TimePoint) -> Unit,
+    initialState: InitialState,
+    onSaveUserParameters: (minTemperature: Int, maxTemperature: Int, leaveTime: TimePoint, arriveTime: TimePoint) -> Unit,
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
-    viewModel: UserEditViewModel = UserEditViewModel(
+    viewModel: UserEditViewModel =
+        UserEditViewModel(
             UserEditUiState(
                 minTemperature = initialState.minTemperature,
                 maxTemperature = initialState.maxTemperature,
                 leaveTime = TimePoint(initialState.leaveTime.hour, initialState.leaveTime.min),
-                arriveTime = TimePoint(initialState.arriveTime.hour, initialState.arriveTime.min)
-            )
+                arriveTime = TimePoint(initialState.arriveTime.hour, initialState.arriveTime.min),
+            ),
         ),
 ) {
-    val uiState by viewModel.uiState.collectAsState();
+    val uiState by viewModel.uiState.collectAsState()
     Scaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
         Column(modifier = modifier.padding(paddingValues)) {
             Box(contentAlignment = Alignment.TopStart) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
                         onSaveUserParameters(uiState.minTemperature, uiState.maxTemperature, uiState.leaveTime, uiState.arriveTime)
-                        onBack();
+                        onBack()
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                    Text("Commute Settings", fontSize = dimensionResource(R.dimen.title_font_size).value.sp, modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin)))
+                    Text(
+                        "Commute Settings",
+                        fontSize = dimensionResource(R.dimen.title_font_size).value.sp,
+                        modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin)),
+                    )
                 }
             }
 
             // Separator
             HorizontalDivider(
                 color = Color.Gray,
-                thickness = 1.dp
+                thickness = 1.dp,
             )
 
             // Temperature
-            TemperatureSlider(value = uiState.minTemperature, label = "Minimum temperature", minValue = -20, maxValue = 20, onTemperatureChange={ temperature -> viewModel.updateMinTemperature(temperature);});
-            TemperatureSlider(value = uiState.maxTemperature, label = "Maximum temperature", minValue = 0, maxValue = 40, onTemperatureChange={ temperature -> viewModel.updateMaxTemperature(temperature);});
+            TemperatureSlider(value = uiState.minTemperature, label = "Minimum temperature", minValue = -20, maxValue = 20, onTemperatureChange = { temperature ->
+                viewModel.updateMinTemperature(temperature)
+            })
+            TemperatureSlider(value = uiState.maxTemperature, label = "Maximum temperature", minValue = 0, maxValue = 40, onTemperatureChange = { temperature ->
+                viewModel.updateMaxTemperature(temperature)
+            })
 
             // Time edit
             Text(
                 text = "Commute times",
                 fontSize = dimensionResource(R.dimen.section_title_font_size).value.sp,
-                modifier = modifier.padding(dimensionResource(R.dimen.horizontal_margin))
+                modifier = modifier.padding(dimensionResource(R.dimen.horizontal_margin)),
             )
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                Column() {
+                Column {
                     EditableTime(label = "Leave at", onEdit = {
                         viewModel.showLeaveTimeDialog()
                     }, hour = uiState.leaveTime.hour, min = uiState.leaveTime.min)
@@ -121,10 +127,9 @@ fun UserEditScreen(
                         viewModel.showArriveTimeDialog()
                     }, hour = uiState.arriveTime.hour, min = uiState.arriveTime.min)
                 }
-
             }
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                Row() {
+                Row {
                     TextTimeDuration(
                         startHour = uiState.leaveTime.hour,
                         startMin = uiState.leaveTime.min,
@@ -137,26 +142,27 @@ fun UserEditScreen(
             if (uiState.showLeaveTimeDialog || uiState.showArriveTimeDialog) {
                 val timeInterval = if (uiState.showLeaveTimeDialog) uiState.leaveTime else uiState.arriveTime
                 val label = if (uiState.showLeaveTimeDialog) "Set leave time" else "Set arrival time"
-                val state = TimePickerState(
-                    initialHour = timeInterval.hour,
-                    initialMinute = timeInterval.min,
-                    is24Hour = false
-                )
+                val state =
+                    TimePickerState(
+                        initialHour = timeInterval.hour,
+                        initialMinute = timeInterval.min,
+                        is24Hour = false,
+                    )
                 TimePickerDialog(
                     onDismiss = { viewModel.dismissDialogs() },
                     onSet = {
                         if (uiState.showLeaveTimeDialog) {
-                            viewModel.updateLeaveTime(hour=state.hour, min=state.minute)
+                            viewModel.updateLeaveTime(hour = state.hour, min = state.minute)
                             viewModel.dismissDialogs()
                         } else {
-                            viewModel.updateArriveTime(hour=state.hour, min=state.minute)
+                            viewModel.updateArriveTime(hour = state.hour, min = state.minute)
                             viewModel.dismissDialogs()
                         }
-                    }
+                    },
                 ) {
                     Text(text = label)
                     TimePicker(
-                        state = state
+                        state = state,
                     )
                 }
             }
@@ -169,51 +175,74 @@ fun UserEditScreen(
 fun TemperatureSlider(
     value: Int,
     label: String,
-    minValue : Int = -10,
-    maxValue : Int = 10,
-    onTemperatureChange: (Int) -> Unit
+    minValue: Int = -10,
+    maxValue: Int = 10,
+    onTemperatureChange: (Int) -> Unit,
 ) {
-    Text(text = "$label   $value °C", modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin)), fontSize = dimensionResource(R.dimen.section_title_font_size).value.sp)
+    Text(
+        text = "$label   $value °C",
+        modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin)),
+        fontSize = dimensionResource(R.dimen.section_title_font_size).value.sp,
+    )
     val barValue = (value - minValue).toFloat() / (maxValue - minValue).toFloat()
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-        Slider(value= barValue, steps = maxValue - minValue + 1,onValueChange={value: Float -> onTemperatureChange(((maxValue - minValue) * value + minValue).toInt());},modifier= Modifier.fillMaxWidth(0.7f));
+        Slider(value = barValue, steps = maxValue - minValue + 1, onValueChange = { value: Float ->
+            onTemperatureChange(
+                (
+                    (maxValue - minValue) *
+                        value +
+                        minValue
+                ).toInt(),
+            )
+        }, modifier = Modifier.fillMaxWidth(0.7f))
     }
 }
 
 @Composable
-fun EditableTime (
+fun EditableTime(
     label: String,
     onEdit: () -> Unit,
     hour: Int,
     min: Int,
 ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier= Modifier.padding(dimensionResource(R.dimen.horizontal_margin))) {
-            Text(text = "$label ${hour.toString().padStart(2,'0')}:${min.toString().padStart(2,'0')}", modifier=Modifier.padding(dimensionResource(R.dimen.horizontal_margin)))
-            Button(onClick = {
-                onEdit();
-            }) {
-                Icon(Icons.Filled.Edit, contentDescription = label)
-            }
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin))) {
+        Text(
+            text = "$label ${hour.toString().padStart(2,'0')}:${min.toString().padStart(2,'0')}",
+            modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin)),
+        )
+        Button(onClick = {
+            onEdit()
+        }) {
+            Icon(Icons.Filled.Edit, contentDescription = label)
         }
+    }
 }
 
 @Composable
-fun TextTimeDuration (startHour: Int, startMin: Int, endHour: Int, endMin: Int, modifier: Modifier = Modifier) {
-    val durationFullMin = (60 * (endHour  - startHour) + endMin - startMin).let{if (it < 0) it + 24 * 60 else it};
-    val durationHours = durationFullMin / 60;
-    val durationMins = durationFullMin % 60;
+fun TextTimeDuration(
+    startHour: Int,
+    startMin: Int,
+    endHour: Int,
+    endMin: Int,
+    modifier: Modifier = Modifier,
+) {
+    val durationFullMin = (60 * (endHour - startHour) + endMin - startMin).let { if (it < 0) it + 24 * 60 else it }
+    val durationHours = durationFullMin / 60
+    val durationMins = durationFullMin % 60
 
     val textHours = if (durationHours > 0) "$durationHours hours${if (durationMins > 0) " and" else ""}" else ""
-    val textMins = if (durationMins > 0)  "$durationMins minutes" else  ""
-    Text(text = "Duration: $textHours $textMins",
-        modifier = modifier.padding(dimensionResource(R.dimen.horizontal_margin)))
+    val textMins = if (durationMins > 0) "$durationMins minutes" else ""
+    Text(
+        text = "Duration: $textHours $textMins",
+        modifier = modifier.padding(dimensionResource(R.dimen.horizontal_margin)),
+    )
 }
 
 @Composable
 fun TimePickerDialog(
     onDismiss: () -> Unit = {},
     onSet: () -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -227,6 +256,6 @@ fun TimePickerDialog(
                 Text("Set")
             }
         },
-        text = { content() }
+        text = { content() },
     )
 }

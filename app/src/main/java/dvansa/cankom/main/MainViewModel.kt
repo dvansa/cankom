@@ -32,8 +32,8 @@ import java.time.LocalDateTime
 
 data class MainUiState(
     val isRefreshing: Boolean = false,
-    val commuteWarnings : List<CommuteWarning> = listOf(),
-    val nextCommuteTime : LocalDateTime? = null
+    val commuteWarnings: List<CommuteWarning> = listOf(),
+    val nextCommuteTime: LocalDateTime? = null,
 )
 
 enum class CommuteState {
@@ -42,37 +42,37 @@ enum class CommuteState {
     TEMPERATURE_HOT,
     TEMPERATURE_UNKNOWN,
     PRECIPITATION,
-    PRECIPITATION_UNKNOWN
+    PRECIPITATION_UNKNOWN,
 }
 
-data class CommuteWarning (
-    val state : CommuteState,
-    val param1 : Float = 0.0f,
-    val param2 : Float = 0.0f
+data class CommuteWarning(
+    val state: CommuteState,
+    val param1: Float = 0.0f,
+    val param2: Float = 0.0f,
 )
 
-class MainViewModel (
+class MainViewModel(
     getAllowedTemperatureRange: () -> Pair<Int, Int>,
     getCommuteTemperatureRange: suspend () -> Pair<Int, Int>?,
-    checkPrecipitationsInRoute : suspend () -> Boolean?,
-    checkRouteAvailable : suspend () -> Boolean,
-    getNextCommuteTime : () -> LocalDateTime,
-    mainUiState : MainUiState = MainUiState()) : ViewModel() {
-
+    checkPrecipitationsInRoute: suspend () -> Boolean?,
+    checkRouteAvailable: suspend () -> Boolean,
+    getNextCommuteTime: () -> LocalDateTime,
+    mainUiState: MainUiState = MainUiState(),
+) : ViewModel() {
     private val _getAllowedTemperatureRange = getAllowedTemperatureRange
     private val _getCommuteTemperatureRange = getCommuteTemperatureRange
     private val _checkPrecipitationsInRoute = checkPrecipitationsInRoute
     private val _checkRouteAvailable = checkRouteAvailable
     private val _getNextCommuteTime = getNextCommuteTime
 
-    private val _uiState = MutableStateFlow<MainUiState>(mainUiState);
-    val uiState: StateFlow<MainUiState> get() = _uiState;
+    private val _uiState = MutableStateFlow<MainUiState>(mainUiState)
+    val uiState: StateFlow<MainUiState> get() = _uiState
 
     fun refreshCommuteState() {
         viewModelScope.launch {
-            val commuteWarnings : MutableList<CommuteWarning> = mutableListOf()
+            val commuteWarnings: MutableList<CommuteWarning> = mutableListOf()
 
-            if(!_checkRouteAvailable()) {
+            if (!_checkRouteAvailable()) {
                 commuteWarnings.add(CommuteWarning(CommuteState.ROUTE_UNKNOWN))
             } else {
                 // Temperature
@@ -87,8 +87,8 @@ class MainViewModel (
                             CommuteWarning(
                                 CommuteState.TEMPERATURE_COLD,
                                 temperatureRange.first.toFloat(),
-                                allowedTemperatureRange.first.toFloat()
-                            )
+                                allowedTemperatureRange.first.toFloat(),
+                            ),
                         )
                     }
                     if (temperatureRange.second > allowedTemperatureRange.second) {
@@ -96,8 +96,8 @@ class MainViewModel (
                             CommuteWarning(
                                 CommuteState.TEMPERATURE_HOT,
                                 temperatureRange.second.toFloat(),
-                                allowedTemperatureRange.second.toFloat()
-                            )
+                                allowedTemperatureRange.second.toFloat(),
+                            ),
                         )
                     }
                 }
@@ -111,14 +111,11 @@ class MainViewModel (
                 }
             }
 
-            _uiState.value = _uiState.value.copy(commuteWarnings = commuteWarnings.toList(), nextCommuteTime = _getNextCommuteTime());
+            _uiState.value = _uiState.value.copy(commuteWarnings = commuteWarnings.toList(), nextCommuteTime = _getNextCommuteTime())
         }
     }
 
-    fun updateRefreshing(isRefreshing : Boolean) {
-        _uiState.value = _uiState.value.copy(isRefreshing = isRefreshing);
+    fun updateRefreshing(isRefreshing: Boolean) {
+        _uiState.value = _uiState.value.copy(isRefreshing = isRefreshing)
     }
-
 }
-
-

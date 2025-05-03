@@ -23,7 +23,6 @@
 */
 package dvansa.cankom.maproute
 
-
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.maps.model.LatLng
 import dvansa.cankom.meteo.PrecipitationRegion
@@ -32,29 +31,31 @@ import kotlinx.coroutines.flow.StateFlow
 
 data class MapRouteUiState(
     val route: List<LatLng> = listOf(),
-    val closePrecipitationRegions : List<PrecipitationRegion> = listOf(),
-    val intersectingPrecipitationRegions : List<PrecipitationRegion> = listOf()
+    val closePrecipitationRegions: List<PrecipitationRegion> = listOf(),
+    val intersectingPrecipitationRegions: List<PrecipitationRegion> = listOf(),
 )
 
-class MapRouteViewModel (mapRouteUiState : MapRouteUiState = MapRouteUiState()) : ViewModel() {
-
-    private val _uiState = MutableStateFlow<MapRouteUiState>(mapRouteUiState);
-    val uiState: StateFlow<MapRouteUiState> get() = _uiState;
+class MapRouteViewModel(
+    mapRouteUiState: MapRouteUiState = MapRouteUiState(),
+) : ViewModel() {
+    private val _uiState = MutableStateFlow<MapRouteUiState>(mapRouteUiState)
+    val uiState: StateFlow<MapRouteUiState> get() = _uiState
 
     fun resetRoute() {
-        _uiState.value = _uiState.value.copy(route = listOf());
+        _uiState.value = _uiState.value.copy(route = listOf())
     }
 
-    fun addRoutePoint(point : LatLng) {
-        val route : MutableList<LatLng> = _uiState.value.route.toMutableList();
+    fun addRoutePoint(point: LatLng) {
+        val route: MutableList<LatLng> = _uiState.value.route.toMutableList()
         route.add(point)
-        _uiState.value = _uiState.value.copy(route = route);
+        _uiState.value = _uiState.value.copy(route = route)
     }
 
-    fun setPrecipitationRegions(intersectingRegions : List<PrecipitationRegion>, closeRegions : List<PrecipitationRegion>) {
-        _uiState.value = _uiState.value.copy(intersectingPrecipitationRegions = intersectingRegions, closePrecipitationRegions = closeRegions);
+    fun setPrecipitationRegions(
+        intersectingRegions: List<PrecipitationRegion>,
+        closeRegions: List<PrecipitationRegion>,
+    ) {
+        _uiState.value =
+            _uiState.value.copy(intersectingPrecipitationRegions = intersectingRegions, closePrecipitationRegions = closeRegions)
     }
-
 }
-
-

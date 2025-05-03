@@ -32,8 +32,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -65,22 +62,22 @@ import dvansa.cankom.meteo.PrecipitationRegion
 import dvansa.cankom.model.MapPath
 import kotlinx.coroutines.launch
 
-
 data class InitialState(
-    val route : dvansa.cankom.model.MapPath
+    val route: dvansa.cankom.model.MapPath,
 )
 
-val MAP_INTENSITY_TO_COLOR : Map<Int, Color> = mapOf(
-    0 to Color(0xDD9A7E95),
-    1 to Color(0xDD0001fC),
-    2 to Color(0xDD058C2D),
-    3 to Color(0xDD05FF05),
-    4 to Color(0xDDfEFF01),
-    5 to Color(0xDDFFC703),
-    6 to Color(0xDDFF7D01),
-    7 to Color(0xDDFF0000),
-    8 to Color(0xDDFF00FF)
-)
+val MAP_INTENSITY_TO_COLOR: Map<Int, Color> =
+    mapOf(
+        0 to Color(0xDD9A7E95),
+        1 to Color(0xDD0001fC),
+        2 to Color(0xDD058C2D),
+        3 to Color(0xDD05FF05),
+        4 to Color(0xDDfEFF01),
+        5 to Color(0xDDFFC703),
+        6 to Color(0xDDFF7D01),
+        7 to Color(0xDDFF0000),
+        8 to Color(0xDDFF00FF),
+    )
 
 val INTERSECTING_REGIONS_COLOR = Color(0xDDFF0000)
 
@@ -90,26 +87,32 @@ fun MapRouteScreen(
     onSaveRoute: (MapPath) -> Unit,
     onBack: () -> Unit,
     checkPrecipitationCommute: suspend () -> Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>?,
-    checkTemperatureCommute: suspend (Context) -> Pair<Int,Int>?,
+    checkTemperatureCommute: suspend (Context) -> Pair<Int, Int>?,
     modifier: Modifier = Modifier,
-    viewModel: MapRouteViewModel = MapRouteViewModel(
-        MapRouteUiState(route=initialState.route.map {
-            LatLng(it.latitude, it.longitude)
-        })
-    )
+    viewModel: MapRouteViewModel =
+        MapRouteViewModel(
+            MapRouteUiState(
+                route =
+                    initialState.route.map {
+                        LatLng(it.latitude, it.longitude)
+                    },
+            ),
+        ),
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { paddingValues ->
         Column(modifier = modifier.padding(paddingValues)) {
-            val uiState by viewModel.uiState.collectAsState();
+            val uiState by viewModel.uiState.collectAsState()
             Box(contentAlignment = Alignment.TopStart) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
-                        onSaveRoute(/*newRoute=*/uiState.route.map {
-                            dvansa.cankom.model.LatLng(
-                                it.latitude,
-                                it.longitude
-                            )
-                        })
+                        onSaveRoute( // newRoute=
+                            uiState.route.map {
+                                dvansa.cankom.model.LatLng(
+                                    it.latitude,
+                                    it.longitude,
+                                )
+                            },
+                        )
                         onBack()
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -117,7 +120,7 @@ fun MapRouteScreen(
                     Text(
                         "Route",
                         fontSize = dimensionResource(R.dimen.title_font_size).value.sp,
-                        modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin))
+                        modifier = Modifier.padding(dimensionResource(R.dimen.horizontal_margin)),
                     )
                 }
             }
@@ -125,38 +128,40 @@ fun MapRouteScreen(
             // Separator
             HorizontalDivider(
                 color = Color.Gray,
-                thickness = 1.dp
+                thickness = 1.dp,
             )
 
             // Initial position at Zürich
             val startPosition = LatLng(47.3769, 8.54173)
-            val cameraPositionState = rememberCameraPositionState {
-                position = CameraPosition.fromLatLngZoom(startPosition, 14.5f)
-            }
-            Row() {
-                Column() {
+            val cameraPositionState =
+                rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(startPosition, 14.5f)
+                }
+            Row {
+                Column {
                     Text(
                         text = "Click: add waypoint.  ",
-                        modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.horizontal_small_margin))
+                        modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.horizontal_small_margin)),
                     )
                     Text(
                         text = "Long Click: reset route.",
-                        modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.horizontal_small_margin))
+                        modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.horizontal_small_margin)),
                     )
                 }
                 // Check precipitation
                 Button(onClick = {
                     viewModel.viewModelScope.launch {
                         try {
-                            val (intersectingPrecipitationRegions, closePrecipitationRegions) = checkPrecipitationCommute().let {
-                                it ?: Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>(
-                                    listOf(),
-                                    listOf()
-                                )
-                            }
+                            val (intersectingPrecipitationRegions, closePrecipitationRegions) =
+                                checkPrecipitationCommute().let {
+                                    it ?: Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>(
+                                        listOf(),
+                                        listOf(),
+                                    )
+                                }
                             viewModel.setPrecipitationRegions(
                                 intersectingPrecipitationRegions,
-                                closePrecipitationRegions
+                                closePrecipitationRegions,
                             )
                         } catch (e: Exception) {
                             println("Http error while getting radar data: ${e.message}")
@@ -174,38 +179,47 @@ fun MapRouteScreen(
                 cameraPositionState = cameraPositionState,
                 uiSettings = MapUiSettings(zoomControlsEnabled = true),
                 onMapLongClick = { latLng ->
-                    viewModel.resetRoute();
+                    viewModel.resetRoute()
                     viewModel.setPrecipitationRegions(
                         listOf(),
-                        listOf()
+                        listOf(),
                     )
-                 },
+                },
                 onMapClick = { latLng ->
                     viewModel.addRoutePoint(latLng)
-                    onSaveRoute(/*newRoute=*/uiState.route.map{ dvansa.cankom.model.LatLng(it.latitude, it.longitude)})
-                }) {
-
+                    onSaveRoute(/*newRoute=*/uiState.route.map { dvansa.cankom.model.LatLng(it.latitude, it.longitude) })
+                },
+            ) {
                 // Precipitation regions
-                uiState.closePrecipitationRegions.forEach{
-                    region : PrecipitationRegion ->
-                    Polygon(points= region.polygon.map { LatLng(it.latitude, it.longitude)}, fillColor = MAP_INTENSITY_TO_COLOR.get(region.intensity) ?: Color(0xFFFFFFFF), strokeWidth=0.0f )
+                uiState.closePrecipitationRegions.forEach { region: PrecipitationRegion ->
+                    Polygon(
+                        points = region.polygon.map { LatLng(it.latitude, it.longitude) },
+                        fillColor =
+                            MAP_INTENSITY_TO_COLOR.get(region.intensity) ?: Color(0xFFFFFFFF),
+                        strokeWidth = 0.0f,
+                    )
                 }
-                uiState.intersectingPrecipitationRegions.forEach{
-                        region : PrecipitationRegion ->
-                    Polygon(points= region.polygon.map { LatLng(it.latitude, it.longitude)}, fillColor = INTERSECTING_REGIONS_COLOR, strokeWidth=0.0f )
+                uiState.intersectingPrecipitationRegions.forEach { region: PrecipitationRegion ->
+                    Polygon(
+                        points = region.polygon.map { LatLng(it.latitude, it.longitude) },
+                        fillColor = INTERSECTING_REGIONS_COLOR,
+                        strokeWidth = 0.0f,
+                    )
                 }
 
                 // Commute route
                 Polyline(
-                    points=uiState.route,
+                    points = uiState.route,
                     color = Color(0xFFC04DD1),
-                    width = 11.0f
+                    width = 11.0f,
                 )
                 if (!uiState.route.isEmpty()) {
-                    Circle(center = uiState.route.get(0),
-                    fillColor = Color(0xFFC04DD1),
-                    strokeColor = Color(0xFFC04DD1),
-                    radius = 21.0)
+                    Circle(
+                        center = uiState.route.get(0),
+                        fillColor = Color(0xFFC04DD1),
+                        strokeColor = Color(0xFFC04DD1),
+                        radius = 21.0,
+                    )
                 }
             }
         }

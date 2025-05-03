@@ -40,7 +40,9 @@ object NavDestinations {
     const val MAP_ROUTE_ROUTE = MAP_ROUTE_SCREEN
 }
 
-class NavActions(private val navController: NavHostController) {
+class NavActions(
+    private val navController: NavHostController,
+) {
     fun navigateToMain() {
         navController.navigate(NavDestinations.MAIN_ROUTE)
     }

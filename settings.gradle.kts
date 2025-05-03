@@ -23,8 +23,7 @@
 */
 pluginManagement {
     repositories {
-        google()
-        {
+        google {
             content {
                 includeGroupByRegex("com\\.android.*")
                 includeGroupByRegex("com\\.google.*")
@@ -47,4 +46,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "CanKom"
 include(":app")
- 

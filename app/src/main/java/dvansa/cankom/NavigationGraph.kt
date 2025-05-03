@@ -43,18 +43,17 @@ import dvansa.cankom.useredit.UserEditScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-
 @Composable
 fun NavigationGraph(
     modifier: Modifier = Modifier,
-    appController : AppController = AppController(MeteoSwissClient()),
+    appController: AppController = AppController(MeteoSwissClient()),
     navController: NavHostController = rememberNavController(),
-    navCorountineScope : CoroutineScope = rememberCoroutineScope(),
-    navActions : NavActions = NavActions(navController),
+    navCorountineScope: CoroutineScope = rememberCoroutineScope(),
+    navActions: NavActions = NavActions(navController),
 ) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        navCorountineScope.launch() {
+        navCorountineScope.launch {
             appController.loadModel(context)
             println("Loaded Model")
         }
@@ -62,67 +61,69 @@ fun NavigationGraph(
     NavHost(
         navController = navController,
         startDestination = NavDestinations.MAIN_ROUTE,
-        modifier = modifier
+        modifier = modifier,
     ) {
         composable(
             NavDestinations.MAIN_ROUTE,
         ) {
             MainScreen(
                 onEditButton = { navActions.navigateToUserEdit() },
-                onMapRouteButton = { navActions.navigateToMapRoute()},
-                onRefresh = {
-                        context, useCached ->
+                onMapRouteButton = { navActions.navigateToMapRoute() },
+                onRefresh = { context, useCached ->
                     val startTime = System.currentTimeMillis()
                     appController.checkCommutePrecipitation(useCached = useCached)
                     val precipitationTime = System.currentTimeMillis()
                     appController.checkCommuteTemperatureRange(context = context, useCached = useCached)
                     val temperatureTime = System.currentTimeMillis()
-                    println("Query times. Precipitation = ${precipitationTime - startTime} ms. Temperature = ${temperatureTime - precipitationTime} ms")
+                    println(
+                        "Query times. Precipitation = ${precipitationTime - startTime} ms. Temperature = ${temperatureTime - precipitationTime} ms",
+                    )
                 },
                 modifier = modifier,
-                viewModel = MainViewModel(
-                    getAllowedTemperatureRange = {
-                        val commuteParams = appController.getCommuteParameters()
-                        Pair(commuteParams.minTemperature, commuteParams.maxTemperature)
-                    },
-                    getCommuteTemperatureRange = {
-                        appController.checkCommuteTemperatureRange()
-                    },
-                    checkPrecipitationsInRoute = {
-                        appController.checkCommutePrecipitation().let {
-                            it?.first?.isNotEmpty()
-                        }
-                    },
-                    checkRouteAvailable = {
-                        appController.getCommuteRoute().size > 1
-                    },
-                    getNextCommuteTime = {
-                        // TODO assuming +2 GMT.
-                        appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
-                    }
-                )
+                viewModel =
+                    MainViewModel(
+                        getAllowedTemperatureRange = {
+                            val commuteParams = appController.getCommuteParameters()
+                            Pair(commuteParams.minTemperature, commuteParams.maxTemperature)
+                        },
+                        getCommuteTemperatureRange = {
+                            appController.checkCommuteTemperatureRange()
+                        },
+                        checkPrecipitationsInRoute = {
+                            appController.checkCommutePrecipitation().let {
+                                it?.first?.isNotEmpty()
+                            }
+                        },
+                        checkRouteAvailable = {
+                            appController.getCommuteRoute().size > 1
+                        },
+                        getNextCommuteTime = {
+                            // TODO assuming +2 GMT.
+                            appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
+                        },
+                    ),
             )
         }
         composable(NavDestinations.USER_EDIT_ROUTE) {
             UserEditScreen(
-                initialState = {
-                    val params = appController.getCommuteParameters()
-                    InitialState(
-                        minTemperature=params.minTemperature,
-                        maxTemperature=params.maxTemperature,
-                        leaveTime=params.leaveTime,
-                        arriveTime=params.arriveTime
-                    )
-                }(),
-                onSaveUserParameters = {
-                        minTemperature, maxTemperature, leaveTime, arriveTime ->
+                initialState =
+                    {
+                        val params = appController.getCommuteParameters()
+                        InitialState(
+                            minTemperature = params.minTemperature,
+                            maxTemperature = params.maxTemperature,
+                            leaveTime = params.leaveTime,
+                            arriveTime = params.arriveTime,
+                        )
+                    }(),
+                onSaveUserParameters = { minTemperature, maxTemperature, leaveTime, arriveTime ->
                     appController.setCommuteTime(
-                        leaveTime=TimePoint(hour=leaveTime.hour, min= leaveTime.min),
-                        arriveTime=TimePoint(hour=arriveTime.hour, min= arriveTime.min)
+                        leaveTime = TimePoint(hour = leaveTime.hour, min = leaveTime.min),
+                        arriveTime = TimePoint(hour = arriveTime.hour, min = arriveTime.min),
                     )
                     appController.setCommuteTemperatureRange(
-                        minTemperature=minTemperature,
-                        maxTemperature=maxTemperature
+                        minTemperature = minTemperature,
+                        maxTemperature = maxTemperature,
                     )
                     navCorountineScope.launch {
                         appController.saveModel(context)
@@ -132,14 +133,15 @@ fun NavigationGraph(
                 onBack = {
                     navActions.navigateToMain()
                 },
-                modifier = modifier)
+                modifier = modifier,
+            )
         }
 
         composable(NavDestinations.MAP_ROUTE_ROUTE) {
             MapRouteScreen(
-                initialState = dvansa.cankom.maproute.InitialState(route=appController.getCommuteRoute()),
-                onSaveRoute = {
-                    newRoute -> appController.setCommuteRoute(newRoute)
+                initialState = dvansa.cankom.maproute.InitialState(route = appController.getCommuteRoute()),
+                onSaveRoute = { newRoute ->
+                    appController.setCommuteRoute(newRoute)
                     navCorountineScope.launch {
                         appController.saveModel(context)
                         println("Saved Model")
@@ -149,10 +151,10 @@ fun NavigationGraph(
                 checkPrecipitationCommute = {
                     appController.checkCommutePrecipitation()
                 },
-                checkTemperatureCommute = {
-                        context -> appController.checkCommuteTemperatureRange(context)
+                checkTemperatureCommute = { context ->
+                    appController.checkCommuteTemperatureRange(context)
                 },
-                modifier = modifier
+                modifier = modifier,
             )
         }
     }

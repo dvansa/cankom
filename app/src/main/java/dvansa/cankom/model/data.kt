@@ -30,49 +30,53 @@ import java.io.InputStream
 import java.io.OutputStream
 
 @Serializable
-data class LatLng (
-    val latitude : Double = 0.0,
-    val longitude : Double = 0.0
+data class LatLng(
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
 )
 
 typealias MapPath = List<LatLng>
 
 @Serializable
 data class TimePoint(
-    val hour : Int = 0,
-    val min : Int = 0
+    val hour: Int = 0,
+    val min: Int = 0,
 )
 
 @Serializable
-data class CommuteParameters (
-    var minTemperature : Int = 0,
-    var maxTemperature : Int = 30,
-    var leaveTime : TimePoint = TimePoint(hour=22, min=0),
-    var arriveTime : TimePoint = TimePoint(hour=22, min=30),
+data class CommuteParameters(
+    var minTemperature: Int = 0,
+    var maxTemperature: Int = 30,
+    var leaveTime: TimePoint = TimePoint(hour = 22, min = 0),
+    var arriveTime: TimePoint = TimePoint(hour = 22, min = 30),
 )
 
 @Serializable
-data class DataModel (
-    var commuteParams : CommuteParameters = CommuteParameters(),
-    var route : MapPath = listOf()
+data class DataModel(
+    var commuteParams: CommuteParameters = CommuteParameters(),
+    var route: MapPath = listOf(),
 )
 
 object DataModelSerializer : Serializer<DataModel> {
     override val defaultValue = DataModel()
 
     override suspend fun readFrom(input: InputStream): DataModel {
-        val string =  Json.decodeFromString(
-            DataModel.serializer(),
-            input.readBytes().decodeToString()
-        )
+        val string =
+            Json.decodeFromString(
+                DataModel.serializer(),
+                input.readBytes().decodeToString(),
+            )
         println("Serialized string is $string")
         return string
     }
 
-    override suspend fun writeTo(dataModel: DataModel, output: OutputStream) {
+    override suspend fun writeTo(
+        dataModel: DataModel,
+        output: OutputStream,
+    ) {
         println("Writing model ${Json.encodeToString(DataModel.serializer(), dataModel)}")
         output.write(
-            Json.encodeToString(DataModel.serializer(), dataModel).encodeToByteArray()
+            Json.encodeToString(DataModel.serializer(), dataModel).encodeToByteArray(),
         )
     }
 }
