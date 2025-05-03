@@ -34,6 +34,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import kotlin.math.max
@@ -46,6 +47,12 @@ const val QUERY_TIME_RESOLUTION_MINUTES = 10
 // Route distance tolerance in km.
 const val ROUTE_DISTANCE_TOL_IN_KM = 0.5
 
+// Model data store
+val Context.modelDataStore by dataStore(
+    fileName = "data_model.json",
+    serializer = DataModelSerializer,
+)
+
 class AppController(
     val meteoClient: MeteoClient,
 ) {
@@ -55,19 +62,14 @@ class AppController(
     private var precipitationRegions: Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? = null
     private var temperatureRange: Pair<Int, Int>? = null
 
-    // Model data store
-    val Context.modelDataStore by dataStore(
-        fileName = "data_model.json",
-        serializer = DataModelSerializer,
-    )
-
     suspend fun loadModel(context: Context) {
         model = context.modelDataStore.data.first()
     }
 
     suspend fun saveModel(context: Context) {
+        println("Save Model")
         context.modelDataStore.updateData { currentModel ->
-            currentModel.copy(commuteParams = model.commuteParams, model.route)
+            currentModel.copy(commuteParams = model.commuteParams, route = model.route)
         }
     }
 
@@ -77,10 +79,10 @@ class AppController(
         maxTemperature: Int? = null,
     ) {
         minTemperature?.let {
-            model.commuteParams.minTemperature = it
+            model = model.copy(commuteParams = model.commuteParams.copy(minTemperature = it))
         }
         maxTemperature?.let {
-            model.commuteParams.maxTemperature = it
+            model = model.copy(commuteParams = model.commuteParams.copy(maxTemperature = it))
         }
         // Invalidate cache
         temperatureRange = null
@@ -91,10 +93,10 @@ class AppController(
         arriveTime: dvansa.cankom.model.TimePoint? = null,
     ) {
         leaveTime?.let {
-            model.commuteParams.leaveTime = it
+            model = model.copy(commuteParams = model.commuteParams.copy(leaveTime = it))
         }
         arriveTime?.let {
-            model.commuteParams.arriveTime = it
+            model = model.copy(commuteParams = model.commuteParams.copy(arriveTime = it))
         }
         // Invalidate cache
         temperatureRange = null
@@ -105,7 +107,7 @@ class AppController(
 
     // Route
     fun setCommuteRoute(newRoute: MapPath) {
-        model.route = newRoute
+        model = model.copy(route = newRoute)
         // Invalidate cache
         temperatureRange = null
         precipitationRegions = null

@@ -45,36 +45,31 @@ data class TimePoint(
 
 @Serializable
 data class CommuteParameters(
-    var minTemperature: Int = 0,
-    var maxTemperature: Int = 30,
-    var leaveTime: TimePoint = TimePoint(hour = 22, min = 0),
-    var arriveTime: TimePoint = TimePoint(hour = 22, min = 30),
+    val minTemperature: Int = 0,
+    val maxTemperature: Int = 30,
+    val leaveTime: TimePoint = TimePoint(hour = 22, min = 0),
+    val arriveTime: TimePoint = TimePoint(hour = 22, min = 30),
 )
 
 @Serializable
 data class DataModel(
-    var commuteParams: CommuteParameters = CommuteParameters(),
-    var route: MapPath = listOf(),
+    val commuteParams: CommuteParameters = CommuteParameters(),
+    val route: MapPath = listOf(),
 )
 
 object DataModelSerializer : Serializer<DataModel> {
     override val defaultValue = DataModel()
 
-    override suspend fun readFrom(input: InputStream): DataModel {
-        val string =
-            Json.decodeFromString(
-                DataModel.serializer(),
-                input.readBytes().decodeToString(),
-            )
-        println("Serialized string is $string")
-        return string
-    }
+    override suspend fun readFrom(input: InputStream): DataModel =
+        Json.decodeFromString(
+            DataModel.serializer(),
+            input.readBytes().decodeToString(),
+        )
 
     override suspend fun writeTo(
         dataModel: DataModel,
         output: OutputStream,
     ) {
-        println("Writing model ${Json.encodeToString(DataModel.serializer(), dataModel)}")
         output.write(
             Json.encodeToString(DataModel.serializer(), dataModel).encodeToByteArray(),
         )
