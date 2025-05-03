@@ -55,9 +55,8 @@ val MAP_COLOR_TO_INTENSITY: Map<String, Int> =
         "feff01" to 4,
         "ffc703" to 5,
         "ff7d01" to 6,
-        // TODO missing values for last 2 levels.
-        "<RED>" to 7,
-        "<PURPLE>" to 8,
+        "ff1900" to 7,
+        "af00dd" to 8,
     )
 
 // Response JSON data -- Precipitation
