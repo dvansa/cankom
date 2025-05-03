@@ -16,6 +16,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Create dummie maps API key
+        run: echo 'API_KEY=aBcDe12345' > local.properties
+
       - name: Permissions on gradlew
         run: chmod +x gradlew
 
