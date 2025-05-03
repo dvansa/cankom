@@ -1,0 +1,15 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: check-added-large-files
+-   repo: local
+    hooks:
+      - id: ktlint
+        name: ktlint
+        description: Kotlin linter
+        entry: ./scripts/ktlint.sh
+        language: script
+        files: \.kt(s)?$
