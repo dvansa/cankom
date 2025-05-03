@@ -59,11 +59,11 @@ class MainViewModel(
     getNextCommuteTime: () -> LocalDateTime,
     mainUiState: MainUiState = MainUiState(),
 ) : ViewModel() {
-    private val _getAllowedTemperatureRange = getAllowedTemperatureRange
-    private val _getCommuteTemperatureRange = getCommuteTemperatureRange
-    private val _checkPrecipitationsInRoute = checkPrecipitationsInRoute
-    private val _checkRouteAvailable = checkRouteAvailable
-    private val _getNextCommuteTime = getNextCommuteTime
+    private val getAllowedTemperatureRangeFn = getAllowedTemperatureRange
+    private val getCommuteTemperatureRangeFn = getCommuteTemperatureRange
+    private val checkPrecipitationsInRouteFn = checkPrecipitationsInRoute
+    private val checkRouteAvailableFn = checkRouteAvailable
+    private val getNextCommuteTimeFn = getNextCommuteTime
 
     private val _uiState = MutableStateFlow<MainUiState>(mainUiState)
     val uiState: StateFlow<MainUiState> get() = _uiState
@@ -72,15 +72,15 @@ class MainViewModel(
         viewModelScope.launch {
             val commuteWarnings: MutableList<CommuteWarning> = mutableListOf()
 
-            if (!_checkRouteAvailable()) {
+            if (!checkRouteAvailableFn()) {
                 commuteWarnings.add(CommuteWarning(CommuteState.ROUTE_UNKNOWN))
             } else {
                 // Temperature
-                val temperatureRange = _getCommuteTemperatureRange()
+                val temperatureRange = getCommuteTemperatureRangeFn()
                 if (temperatureRange == null) {
                     commuteWarnings.add(CommuteWarning(CommuteState.TEMPERATURE_UNKNOWN))
                 } else {
-                    val allowedTemperatureRange = _getAllowedTemperatureRange()
+                    val allowedTemperatureRange = getAllowedTemperatureRangeFn()
                     println("Allowed temperature $allowedTemperatureRange - queried $temperatureRange")
                     if (temperatureRange.first < allowedTemperatureRange.first) {
                         commuteWarnings.add(
@@ -103,7 +103,7 @@ class MainViewModel(
                 }
 
                 // Precipitation
-                val precipitationsInRoute = _checkPrecipitationsInRoute()
+                val precipitationsInRoute = checkPrecipitationsInRouteFn()
                 if (precipitationsInRoute == null) {
                     commuteWarnings.add(CommuteWarning(CommuteState.PRECIPITATION_UNKNOWN))
                 } else if (precipitationsInRoute) {
@@ -111,7 +111,7 @@ class MainViewModel(
                 }
             }
 
-            _uiState.value = _uiState.value.copy(commuteWarnings = commuteWarnings.toList(), nextCommuteTime = _getNextCommuteTime())
+            _uiState.value = _uiState.value.copy(commuteWarnings = commuteWarnings.toList(), nextCommuteTime = getNextCommuteTimeFn())
         }
     }
 

@@ -44,6 +44,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun NavigationGraph(
     modifier: Modifier = Modifier,
     appController: AppController = AppController(MeteoSwissClient()),

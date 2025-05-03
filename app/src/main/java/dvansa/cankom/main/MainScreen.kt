@@ -60,6 +60,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun MainScreen(
     onEditButton: () -> Unit,
     onMapRouteButton: () -> Unit,
@@ -72,7 +73,8 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         viewModel.updateRefreshing(isRefreshing = true)
         viewModel.viewModelScope.launch {
-            onRefresh(localContext, /*useCached=*/true)
+            val useCached = true
+            onRefresh(localContext, useCached)
             viewModel.refreshCommuteState()
             viewModel.updateRefreshing(isRefreshing = false)
         }
@@ -139,7 +141,8 @@ fun MainScreen(
                     onClick = {
                         viewModel.updateRefreshing(isRefreshing = true)
                         viewModel.viewModelScope.launch {
-                            onRefresh(localContext, /*useCached=*/false)
+                            val useCached = false
+                            onRefresh(localContext, useCached)
                             viewModel.refreshCommuteState()
                             viewModel.updateRefreshing(isRefreshing = false)
                         }
@@ -164,6 +167,7 @@ const val EMOJI_WARNING = "\u26A0\uFE0F"
 const val EMOJI_NO_ENTRY = "\u26D4\uFE0F"
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun CommuteStatus(
     commuteWarnings: List<CommuteWarning>,
     nextCommuteTime: LocalDateTime?,
@@ -203,8 +207,12 @@ fun CommuteStatus(
                             CommuteState.ROUTE_UNKNOWN -> "$EMOJI_WARNING Commute route is not set."
                             CommuteState.PRECIPITATION_UNKNOWN -> "$EMOJI_WARNING Precipitation data unavailable."
                             CommuteState.TEMPERATURE_UNKNOWN -> "$EMOJI_WARNING Temperature data unavailable."
-                            CommuteState.TEMPERATURE_HOT -> "$EMOJI_NO_ENTRY $EMOJI_HEATED_FACE Hot temperatures reaching ${it.param1.toInt()} °C (higher than ${it.param2.toInt()} °C)."
-                            CommuteState.TEMPERATURE_COLD -> "$EMOJI_NO_ENTRY $EMOJI_COLD_FACE Cold temperatures reaching ${it.param1.toInt()} °C (lower than ${it.param2.toInt()} °C)."
+                            CommuteState.TEMPERATURE_HOT ->
+                                "$EMOJI_NO_ENTRY $EMOJI_HEATED_FACE Hot temperatures reaching ${it.param1.toInt()} °C" +
+                                    "(higher than ${it.param2.toInt()} °C)."
+                            CommuteState.TEMPERATURE_COLD ->
+                                "$EMOJI_NO_ENTRY $EMOJI_COLD_FACE Cold temperatures reaching ${it.param1.toInt()} °C" +
+                                    "(lower than ${it.param2.toInt()} °C)."
                             CommuteState.PRECIPITATION -> "$EMOJI_NO_ENTRY $EMOJI_RAIN_CLOUD Precipitations on commute route."
                         }
                     TextCommuteWarning(statusText)
@@ -215,6 +223,7 @@ fun CommuteStatus(
 }
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun TextCommuteWarning(
     text: String,
     modifier: Modifier = Modifier,

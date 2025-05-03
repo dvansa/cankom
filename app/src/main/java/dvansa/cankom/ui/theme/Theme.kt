@@ -57,6 +57,7 @@ private val LightColorScheme =
     )
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun CanKomTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+

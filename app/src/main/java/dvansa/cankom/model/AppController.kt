@@ -49,11 +49,11 @@ const val ROUTE_DISTANCE_TOL_IN_KM = 0.5
 class AppController(
     val meteoClient: MeteoClient,
 ) {
-    private var _model: DataModel = DataModel()
+    private var model: DataModel = DataModel()
 
     // Cached meteo data
-    private var _precipitationRegions: Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? = null
-    private var _temperatureRange: Pair<Int, Int>? = null
+    private var precipitationRegions: Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? = null
+    private var temperatureRange: Pair<Int, Int>? = null
 
     // Model data store
     val Context.modelDataStore by dataStore(
@@ -62,12 +62,12 @@ class AppController(
     )
 
     suspend fun loadModel(context: Context) {
-        _model = context.modelDataStore.data.first()
+        model = context.modelDataStore.data.first()
     }
 
     suspend fun saveModel(context: Context) {
         context.modelDataStore.updateData { currentModel ->
-            currentModel.copy(commuteParams = _model.commuteParams, _model.route)
+            currentModel.copy(commuteParams = model.commuteParams, model.route)
         }
     }
 
@@ -77,13 +77,13 @@ class AppController(
         maxTemperature: Int? = null,
     ) {
         minTemperature?.let {
-            _model.commuteParams.minTemperature = it
+            model.commuteParams.minTemperature = it
         }
         maxTemperature?.let {
-            _model.commuteParams.maxTemperature = it
+            model.commuteParams.maxTemperature = it
         }
         // Invalidate cache
-        _temperatureRange = null
+        temperatureRange = null
     }
 
     fun setCommuteTime(
@@ -91,27 +91,27 @@ class AppController(
         arriveTime: dvansa.cankom.model.TimePoint? = null,
     ) {
         leaveTime?.let {
-            _model.commuteParams.leaveTime = it
+            model.commuteParams.leaveTime = it
         }
         arriveTime?.let {
-            _model.commuteParams.arriveTime = it
+            model.commuteParams.arriveTime = it
         }
         // Invalidate cache
-        _temperatureRange = null
-        _precipitationRegions = null
+        temperatureRange = null
+        precipitationRegions = null
     }
 
-    fun getCommuteParameters(): CommuteParameters = _model.commuteParams
+    fun getCommuteParameters(): CommuteParameters = model.commuteParams
 
     // Route
     fun setCommuteRoute(newRoute: MapPath) {
-        _model.route = newRoute
+        model.route = newRoute
         // Invalidate cache
-        _temperatureRange = null
-        _precipitationRegions = null
+        temperatureRange = null
+        precipitationRegions = null
     }
 
-    fun getCommuteRoute(): MapPath = _model.route
+    fun getCommuteRoute(): MapPath = model.route
 
     fun getNextCommuteTimes(minutesResolution: Int? = null): List<LocalDateTime> {
         if (ZonedDateTime.now().offset.id != "+02:00") {
@@ -121,8 +121,8 @@ class AppController(
 
         val queryTimes =
             getQueryCommuteTimes(
-                _model.commuteParams.leaveTime,
-                _model.commuteParams.arriveTime,
+                model.commuteParams.leaveTime,
+                model.commuteParams.arriveTime,
                 minutesResolution ?: QUERY_TIME_RESOLUTION_MINUTES,
             ).map { it.minusHours(timeZoneHourOffset.toLong()) }
         return queryTimes
@@ -130,16 +130,16 @@ class AppController(
 
     // Returns intersecting regions with commute route and other near precipitation regions.
     suspend fun checkCommutePrecipitation(useCached: Boolean = true): Pair<List<PrecipitationRegion>, List<PrecipitationRegion>>? {
-        println("!!! cache $useCached , ${_precipitationRegions == null}")
-        if (useCached && _precipitationRegions != null) {
-            return _precipitationRegions!!
+        println("!!! cache $useCached , ${precipitationRegions == null}")
+        if (useCached && precipitationRegions != null) {
+            return precipitationRegions!!
         }
 
         val queryTimes = getNextCommuteTimes()
         queryTimes.forEach { println("Querying precipitation at time $it GMT+0") }
 
         // Compute commute route bounding box
-        val (routeMin, routeMax) = getLatLngBoundingBox(_model.route, ROUTE_DISTANCE_TOL_IN_KM)
+        val (routeMin, routeMax) = getLatLngBoundingBox(model.route, ROUTE_DISTANCE_TOL_IN_KM)
         println("Commute route bounding box $routeMin , $routeMax")
 
         var closePrecipitationRegions: List<PrecipitationRegion> = listOf()
@@ -173,7 +173,7 @@ class AppController(
             return null
         }
 
-        val routePoints = _model.route.map { Vec2d(it.latitude, it.longitude) }
+        val routePoints = model.route.map { Vec2d(it.latitude, it.longitude) }
 
         for ((i, queriedPrecipitationRegions) in resultsPrecipitation.withIndex()) {
             val precipitationRegions = queriedPrecipitationRegions!!
@@ -236,19 +236,19 @@ class AppController(
             }
         }
 
-        _precipitationRegions = Pair(intersectingPrecipitationRegions, closePrecipitationRegions)
-        return _precipitationRegions!!
+        precipitationRegions = Pair(intersectingPrecipitationRegions, closePrecipitationRegions)
+        return precipitationRegions!!
     }
 
     suspend fun checkCommuteTemperatureRange(
         context: Context? = null,
         useCached: Boolean = true,
     ): Pair<Int, Int>? {
-        if (useCached && _temperatureRange != null) {
-            return _temperatureRange
+        if (useCached && temperatureRange != null) {
+            return temperatureRange
         }
 
-        if (_model.route.size < 2 || context == null) {
+        if (model.route.size < 2 || context == null) {
             return null
         }
 
@@ -256,7 +256,7 @@ class AppController(
 
         val geocoder = Geocoder(context)
         // Query start and end point of route
-        for (routePoint in listOf<LatLng>(_model.route.first(), _model.route.last())) {
+        for (routePoint in listOf<LatLng>(model.route.first(), model.route.last())) {
             val addresses = geocoder.getFromLocation(routePoint.latitude, routePoint.longitude, 5)
             if (addresses != null) {
                 for (addr in addresses) {
@@ -311,7 +311,7 @@ class AppController(
             maxTemperature = max(maxTemperature, minMaxTemperature)
         }
 
-        _temperatureRange = Pair(minTemperature, maxTemperature)
-        return _temperatureRange!!
+        temperatureRange = Pair(minTemperature, maxTemperature)
+        return temperatureRange!!
     }
 }

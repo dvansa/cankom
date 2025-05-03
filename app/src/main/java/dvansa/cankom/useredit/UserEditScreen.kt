@@ -64,6 +64,7 @@ data class InitialState(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun UserEditScreen(
     initialState: InitialState,
     onSaveUserParameters: (minTemperature: Int, maxTemperature: Int, leaveTime: TimePoint, arriveTime: TimePoint) -> Unit,
@@ -105,12 +106,24 @@ fun UserEditScreen(
             )
 
             // Temperature
-            TemperatureSlider(value = uiState.minTemperature, label = "Minimum temperature", minValue = -20, maxValue = 20, onTemperatureChange = { temperature ->
-                viewModel.updateMinTemperature(temperature)
-            })
-            TemperatureSlider(value = uiState.maxTemperature, label = "Maximum temperature", minValue = 0, maxValue = 40, onTemperatureChange = { temperature ->
-                viewModel.updateMaxTemperature(temperature)
-            })
+            TemperatureSlider(
+                value = uiState.minTemperature,
+                label = "Minimum temperature",
+                minValue = -20,
+                maxValue = 20,
+                onTemperatureChange = { temperature ->
+                    viewModel.updateMinTemperature(temperature)
+                },
+            )
+            TemperatureSlider(
+                value = uiState.maxTemperature,
+                label = "Maximum temperature",
+                minValue = 0,
+                maxValue = 40,
+                onTemperatureChange = { temperature ->
+                    viewModel.updateMaxTemperature(temperature)
+                },
+            )
 
             // Time edit
             Text(
@@ -172,6 +185,7 @@ fun UserEditScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun TemperatureSlider(
     value: Int,
     label: String,
@@ -199,6 +213,7 @@ fun TemperatureSlider(
 }
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun EditableTime(
     label: String,
     onEdit: () -> Unit,
@@ -219,6 +234,7 @@ fun EditableTime(
 }
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun TextTimeDuration(
     startHour: Int,
     startMin: Int,
@@ -239,6 +255,7 @@ fun TextTimeDuration(
 }
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun TimePickerDialog(
     onDismiss: () -> Unit = {},
     onSet: () -> Unit = {},

@@ -119,10 +119,10 @@ fun linesIntersect(
     return (v0 * v1 <= 0) && (v2 * v3 <= 0)
 }
 
-// Check if point is contained in polygon.
-// Implementation from https://wrfranklin.org/Research/Short_Notes/pnpoly.html.
-// Subject to the following license note:
-/*
+/* Check if point is contained in polygon.
+* Implementation from https://wrfranklin.org/Research/Short_Notes/pnpoly.html.
+* Subject to the following license note:
+*
 * Copyright (c) 1970-2003, Wm. Randolph Franklin
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:

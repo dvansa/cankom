@@ -82,6 +82,7 @@ val MAP_INTENSITY_TO_COLOR: Map<Int, Color> =
 val INTERSECTING_REGIONS_COLOR = Color(0xDDFF0000)
 
 @Composable
+@Suppress("ktlint:standard:function-naming")
 fun MapRouteScreen(
     initialState: InitialState,
     onSaveRoute: (MapPath) -> Unit,
@@ -187,7 +188,7 @@ fun MapRouteScreen(
                 },
                 onMapClick = { latLng ->
                     viewModel.addRoutePoint(latLng)
-                    onSaveRoute(/*newRoute=*/uiState.route.map { dvansa.cankom.model.LatLng(it.latitude, it.longitude) })
+                    onSaveRoute(uiState.route.map { dvansa.cankom.model.LatLng(it.latitude, it.longitude) })
                 },
             ) {
                 // Precipitation regions
