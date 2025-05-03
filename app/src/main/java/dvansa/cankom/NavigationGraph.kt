@@ -25,6 +25,7 @@ package dvansa.cankom
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -82,27 +83,29 @@ fun NavigationGraph(
                 },
                 modifier = modifier,
                 viewModel =
-                    MainViewModel(
-                        getAllowedTemperatureRange = {
-                            val commuteParams = appController.getCommuteParameters()
-                            Pair(commuteParams.minTemperature, commuteParams.maxTemperature)
-                        },
-                        getCommuteTemperatureRange = {
-                            appController.checkCommuteTemperatureRange()
-                        },
-                        checkPrecipitationsInRoute = {
-                            appController.checkCommutePrecipitation().let {
-                                it?.first?.isNotEmpty()
-                            }
-                        },
-                        checkRouteAvailable = {
-                            appController.getCommuteRoute().size > 1
-                        },
-                        getNextCommuteTime = {
-                            // TODO assuming +2 GMT.
-                            appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
-                        },
-                    ),
+                    remember {
+                        MainViewModel(
+                            getAllowedTemperatureRange = {
+                                val commuteParams = appController.getCommuteParameters()
+                                Pair(commuteParams.minTemperature, commuteParams.maxTemperature)
+                            },
+                            getCommuteTemperatureRange = {
+                                appController.checkCommuteTemperatureRange()
+                            },
+                            checkPrecipitationsInRoute = {
+                                appController.checkCommutePrecipitation().let {
+                                    it?.first?.isNotEmpty()
+                                }
+                            },
+                            checkRouteAvailable = {
+                                appController.getCommuteRoute().size > 1
+                            },
+                            getNextCommuteTime = {
+                                // TODO assuming +2 GMT.
+                                appController.getNextCommuteTimes(minutesResolution = 1).first().plusHours(2)
+                            },
+                        )
+                    },
             )
         }
         composable(NavDestinations.USER_EDIT_ROUTE) {
