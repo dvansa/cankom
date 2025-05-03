@@ -1,5 +1,5 @@
 # CanKom <img src="app/src/main/res/mipmap-hdpi/ic_cankom_round.webp" width="42">
-![CI Badge](https://github.com/dvansa/cankom/actions/workflows/app.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+[![CI Badge](https://github.com/dvansa/cankom/actions/workflows/app.yml/badge.svg)](https://github.com/dvansa/cankom/actions/workflows/app.yml) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 *Can I commute?*
 
@@ -14,11 +14,11 @@ Configure your daily commute route, leave/arrival times and a suitable temperatu
 
 Checks if your next commute will be affected by:
 - Hot/Cold temperatures
-- Precipitations
+- Precipitation
 
 <img src="assets/commute_status_1.jpg" width=220/> <img src="assets/commute_status_3.jpg" width=220/> <img src="assets/commute_status_2.jpg" width=220/>
 
-Precipitation checks are accurately carried out intersecting your route with weather forecast radar data maps.
+Precipitation checks are accurately performed by intersecting your route with weather forecast radar data maps.
 
 <img src="assets/map_precipitation_1.jpg" width=220/> <img src="assets/map_precipitation_2.jpg" width=220/>
 
@@ -40,4 +40,4 @@ API_KEY=<google maps API key>
 - Unless otherwise explicited in file comments, the whole project is under [MIT License](LICENSE).
 
 - Http requests to https://www.meteoswiss.admin.ch are sent to retrieve meteorological forecast information. 
-Users must abide to the legal basis of Meteo Swiss before attempting to use the app or any derivative works. In no event shall the authors of the repository be liable for any potential infringiments caused by users to Meteo Swiss services.
+Users must comply to the legal basis of Meteo Swiss before attempting to use the app or any derivative works. In no event shall the authors of the repository be liable for any potential infringements caused by users to Meteo Swiss services.
